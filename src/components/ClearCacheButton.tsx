@@ -25,4 +25,4 @@ const ClearCacheButton = () => {
   );
 };
 
-export default ClearCacheButton; 
+export default ClearCacheButton;

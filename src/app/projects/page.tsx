@@ -129,16 +129,22 @@ export default function ProjectsPage() {
     
     // 辞退された案件をリストから削除
     if (declined) {
-      const newDeclined = [...declinedProjects, declined];
-      setDeclinedProjects(newDeclined);
-      setCachedData(CACHE_KEYS.DECLINED_PROJECTS, newDeclined);
+      setDeclinedProjects(prev => {
+        if (prev.includes(declined)) return prev; // 既に存在する場合は何もしない
+        const newDeclined = [...prev, declined];
+        setCachedData(CACHE_KEYS.DECLINED_PROJECTS, newDeclined);
+        return newDeclined;
+      });
     }
     
     // 承認された案件を進行中に移動
     if (approved) {
-      const newApproved = [...approvedProjects, approved];
-      setApprovedProjects(newApproved);
-      setCachedData(CACHE_KEYS.APPROVED_PROJECTS, newApproved);
+      setApprovedProjects(prev => {
+        if (prev.includes(approved)) return prev; // 既に存在する場合は何もしない
+        const newApproved = [...prev, approved];
+        setCachedData(CACHE_KEYS.APPROVED_PROJECTS, newApproved);
+        return newApproved;
+      });
       
       // 承認された案件を進行中リストに追加
       const approvedProject = sampleProjects.scout.find(p => p.id === approved);
@@ -248,7 +254,7 @@ export default function ProjectsPage() {
   };
 
   const tabs = [
-    { key: 'scout', label: 'スカウト', count: activeTab === 'scout' ? getCurrentProjects().length : projects.scout.filter(p => !declinedProjects.includes(p.id) && !approvedProjects.includes(p.id)).length },
+    { key: 'scout', label: 'スカウト', count: projects.scout.filter(p => !declinedProjects.includes(p.id) && !approvedProjects.includes(p.id)).length },
     { key: 'inProgress', label: '進行中', count: projects.inProgress.length },
   ];
 
