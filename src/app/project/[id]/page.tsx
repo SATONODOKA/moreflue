@@ -309,96 +309,125 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* 案件詳細 */}
-      <div className="bg-white p-4 mb-4">
-        <div className="mb-4">
-          <img 
-            src={project.imageUrl} 
-            alt={project.storeName}
-            className="w-full h-48 object-cover rounded-lg mb-4"
-          />
-          <h2 className="text-xl font-bold text-smoky-navy mb-2">{project.storeName}</h2>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-              {project.category}
-            </span>
-            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-              {project.location}
-            </span>
-          </div>
-          <div className="text-salmon-coral font-bold text-2xl mb-4">
-            {project.reward.type === 'fixed' ? (
-              `¥${project.reward.amount.toLocaleString()}`
-            ) : (
-              `¥${project.reward.amount.toLocaleString()} + 成果報酬${project.reward.performanceRate}%`
-            )}
-          </div>
-          <div className="bg-gray-100 text-smoky-navy px-3 py-2 rounded-lg text-center text-sm font-bold">
-            マッチ度: {project.matchScore}%
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-bold text-smoky-navy mb-2">店舗ストーリー</h3>
-            <p className="text-gray-700 text-sm leading-relaxed">{project.story}</p>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-smoky-navy mb-2">詳細情報</h3>
-            <div className="space-y-2 text-sm">
-              <div><span className="font-medium">アクセス:</span> {project.details.travelTime}</div>
-              <div><span className="font-medium">投稿要件:</span> {project.details.postRequirements}</div>
-              <div><span className="font-medium">事前承認:</span> {project.details.preApproval ? '必要' : '不要'}</div>
-              <div><span className="font-medium">目標:</span> {project.details.performanceGoals}</div>
-              <div><span className="font-medium">期限:</span> {project.details.timeline}</div>
-              <div><span className="font-medium">備考:</span> {project.details.additionalNotes}</div>
+      {/* 案件詳細（進行中案件の場合はコンパクトに表示） */}
+      {tab === 'inProgress' ? (
+        <div className="bg-white p-4 mb-4">
+          <div className="mb-3">
+            <h2 className="text-lg font-bold text-smoky-navy mb-2">{project.storeName}</h2>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                {project.category}
+              </span>
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                {project.location}
+              </span>
+              <div className="text-salmon-coral font-bold text-lg">
+                {project.reward.type === 'fixed' ? (
+                  `¥${project.reward.amount.toLocaleString()}`
+                ) : (
+                  `¥${project.reward.amount.toLocaleString()} + ${project.reward.performanceRate}%`
+                )}
+              </div>
+            </div>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">マッチ度:</span> {project.matchScore}% | 
+              <span className="font-medium ml-2">アクセス:</span> {project.details.travelTime}
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white p-4 mb-4">
+          <div className="mb-4">
+            <img 
+              src={project.imageUrl} 
+              alt={project.storeName}
+              className="w-full h-48 object-cover rounded-lg mb-4"
+            />
+            <h2 className="text-xl font-bold text-smoky-navy mb-2">{project.storeName}</h2>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                {project.category}
+              </span>
+              <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                {project.location}
+              </span>
+            </div>
+            <div className="text-salmon-coral font-bold text-2xl mb-4">
+              {project.reward.type === 'fixed' ? (
+                `¥${project.reward.amount.toLocaleString()}`
+              ) : (
+                `¥${project.reward.amount.toLocaleString()} + 成果報酬${project.reward.performanceRate}%`
+              )}
+            </div>
+            <div className="bg-gray-100 text-smoky-navy px-3 py-2 rounded-lg text-center text-sm font-bold">
+              マッチ度: {project.matchScore}%
+            </div>
+          </div>
 
-      {/* アクションボタン */}
-      <div className="bg-white p-4 mb-4">
-        {source === 'home' ? (
-          <div className="space-y-3">
-            {isApplied ? (
-              <div className="w-full bg-gray-200 text-gray-600 py-3 rounded-lg text-center font-medium">
-                応募済み
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-bold text-smoky-navy mb-2">店舗ストーリー</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">{project.story}</p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-smoky-navy mb-2">詳細情報</h3>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">アクセス:</span> {project.details.travelTime}</div>
+                <div><span className="font-medium">投稿要件:</span> {project.details.postRequirements}</div>
+                <div><span className="font-medium">事前承認:</span> {project.details.preApproval ? '必要' : '不要'}</div>
+                <div><span className="font-medium">目標:</span> {project.details.performanceGoals}</div>
+                <div><span className="font-medium">期限:</span> {project.details.timeline}</div>
+                <div><span className="font-medium">備考:</span> {project.details.additionalNotes}</div>
               </div>
-            ) : (
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* アクションボタン（進行中案件では非表示） */}
+      {tab !== 'inProgress' && (
+        <div className="bg-white p-4 mb-4">
+          {source === 'home' ? (
+            <div className="space-y-3">
+              {isApplied ? (
+                <div className="w-full bg-gray-200 text-gray-600 py-3 rounded-lg text-center font-medium">
+                  応募済み
+                </div>
+              ) : (
+                <button
+                  onClick={handleApply}
+                  className="w-full bg-salmon-coral text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+                >
+                  この案件に応募する
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex space-x-3">
               <button
-                onClick={handleApply}
-                className="w-full bg-salmon-coral text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+                onClick={handleDecline}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
               >
-                この案件に応募する
+                辞退する
               </button>
-            )}
-          </div>
-        ) : (
-          <div className="flex space-x-3">
-            <button
-              onClick={handleDecline}
-              className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-            >
-              辞退する
-            </button>
-            <button
-              onClick={handleApprove}
-              className="flex-1 bg-salmon-coral text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
-            >
-              承認する
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                onClick={handleApprove}
+                className="flex-1 bg-salmon-coral text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+              >
+                承認する
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* チャット */}
-      {source === 'scout' && (
+      {tab === 'inProgress' && (
         <div className="bg-white p-4">
           <h3 className="font-bold text-smoky-navy mb-4">チャット</h3>
           
-          <div className="bg-white border border-gray-200 rounded-lg h-64 overflow-y-auto p-4 mb-4">
+          <div className="bg-white border border-gray-200 rounded-lg h-96 overflow-y-auto p-4 mb-4">
             {sampleChatMessages.length === 0 ? (
               <div className="text-center text-gray-500 text-sm">
                 まだメッセージがありません

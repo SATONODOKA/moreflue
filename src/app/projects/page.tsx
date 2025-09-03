@@ -209,35 +209,63 @@ export default function ProjectsPage() {
 
   // プロジェクトIDから案件データを検索する関数
   const findProjectById = (id: string) => {
-    // ホーム画面のサンプルデータから検索
+    // ホーム画面のサンプルデータから検索（ID 1-6がホーム画面の案件）
     const homeProjects = [
       {
-        id: '7',
-        storeName: '焼肉 龍神',
-        reward: { type: 'fixed' as const, amount: 18000 },
-        matchScore: 96,
-        category: '焼肉',
+        id: '1',
+        storeName: 'カフェ・ド・パリ',
+        reward: { type: 'fixed' as const, amount: 15000 },
+        matchScore: 95,
+        category: 'カフェ',
+        location: '渋谷',
+      },
+      {
+        id: '2',
+        storeName: 'イタリアン・ベラヴィスタ',
+        reward: { type: 'performance' as const, amount: 8000, performanceRate: 5 },
+        matchScore: 88,
+        category: 'イタリアン',
+        location: '新宿',
+      },
+      {
+        id: '3',
+        storeName: 'ヘアサロン STYLE',
+        reward: { type: 'fixed' as const, amount: 25000 },
+        matchScore: 92,
+        category: 'ビューティー',
+        location: '表参道',
+      },
+      {
+        id: '4',
+        storeName: 'フィットネスジム POWER',
+        reward: { type: 'performance' as const, amount: 10000, performanceRate: 8 },
+        matchScore: 85,
+        category: 'フィットネス',
         location: '恵比寿',
       },
       {
-        id: '8',
+        id: '5',
         storeName: 'スイーツカフェ Sweet',
-        reward: { type: 'performance' as const, amount: 12000, performanceRate: 8 },
-        matchScore: 89,
+        reward: { type: 'fixed' as const, amount: 12000 },
+        matchScore: 90,
         category: 'スイーツ',
         location: '原宿',
       },
       {
-        id: '9',
-        storeName: 'フィットネスジム POWER',
-        reward: { type: 'fixed' as const, amount: 30000 },
-        matchScore: 94,
-        category: 'フィットネス',
-        location: '六本木',
+        id: '6',
+        storeName: 'ラーメン 龍',
+        reward: { type: 'fixed' as const, amount: 8000 },
+        matchScore: 87,
+        category: 'ラーメン',
+        location: '池袋',
       },
     ];
     
-    return homeProjects.find(project => project.id === id);
+    // スカウト案件からも検索（ID 7-9）
+    const scoutProjects = sampleProjects.scout;
+    const allProjects = [...homeProjects, ...scoutProjects];
+    
+    return allProjects.find(project => project.id === id);
   };
 
   const getCurrentProjects = () => {

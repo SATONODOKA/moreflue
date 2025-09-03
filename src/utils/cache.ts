@@ -13,29 +13,45 @@ const checkAndSetSessionFlag = (): boolean => {
   if (typeof window === 'undefined') return false;
   
   try {
-    const sessionFlag = sessionStorage.getItem(CACHE_KEYS.SESSION_FLAG);
-    const isReload = !sessionFlag;
+    // ページのロード方法をチェック
+    const navigationType = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming)?.type;
+    const isPageReload = navigationType === 'reload';
     
-    if (isReload) {
-      // ページリロード時：セッションストレージをクリア
-      sessionStorage.clear();
+    // セッションフラグをチェック
+    const sessionFlag = sessionStorage.getItem(CACHE_KEYS.SESSION_FLAG);
+    const isNewSession = !sessionFlag;
+    
+    // ページリロードまたは新規セッションの場合はキャッシュをクリア
+    if (isPageReload || isNewSession) {
+      // moreflue関連のキャッシュのみクリア（SESSION_FLAGは保持）
+      Object.entries(CACHE_KEYS).forEach(([key, value]) => {
+        if (key !== 'SESSION_FLAG') {
+          sessionStorage.removeItem(value);
+        }
+      });
     }
     
     // セッション継続フラグを設定
     sessionStorage.setItem(CACHE_KEYS.SESSION_FLAG, 'active');
-    return isReload;
+    return isPageReload || isNewSession;
   } catch (error) {
     console.warn('Failed to check session flag:', error);
     return false;
   }
 };
 
+// 初期化フラグ
+let isInitialized = false;
+
 // セッションストレージからデータを取得（ページ再読み込み時にリセット）
 export const getCachedData = <T>(key: string, defaultValue: T): T => {
   if (typeof window === 'undefined') return defaultValue;
   
-  // 初回アクセス時にページリロードをチェック
-  checkAndSetSessionFlag();
+  // 初回アクセス時のみページリロードをチェック
+  if (!isInitialized) {
+    checkAndSetSessionFlag();
+    isInitialized = true;
+  }
   
   try {
     const cached = sessionStorage.getItem(key);
@@ -73,13 +89,16 @@ export const clearAllCache = (): void => {
   if (typeof window === 'undefined') return;
   
   try {
-    // セッションストレージをクリア
-    sessionStorage.clear();
-  } catch (error) {
-    // フォールバック：個別にキーを削除
-    Object.values(CACHE_KEYS).forEach(key => {
-      clearCachedData(key);
+    // moreflue関連のキャッシュのみクリア
+    Object.entries(CACHE_KEYS).forEach(([key, value]) => {
+      if (key !== 'SESSION_FLAG') {
+        sessionStorage.removeItem(value);
+      }
     });
+    // 初期化フラグもリセット
+    isInitialized = false;
+  } catch (error) {
+    console.warn('Failed to clear all cache:', error);
   }
 };
 
