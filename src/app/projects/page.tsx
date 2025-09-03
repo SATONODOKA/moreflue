@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CompactProjectCard from '@/components/CompactProjectCard';
+import ClearCacheButton from '@/components/ClearCacheButton';
+import { getCachedData, setCachedData, CACHE_KEYS, cleanupAppliedProjects } from '@/utils/cache';
 
 // サンプルデータ
 const sampleProjects = {
@@ -38,48 +40,35 @@ const sampleProjects = {
     },
   ],
   inProgress: [
-    {
-      id: '4',
-      storeName: 'フィットネスジム POWER',
-      reward: { type: 'performance' as const, amount: 10000, performanceRate: 8 },
-      matchScore: 85,
-      category: 'フィットネス',
-      location: '恵比寿',
-      status: '投稿準備',
-      deadline: '2024/01/20',
-    },
-    {
-      id: '5',
-      storeName: 'スイーツカフェ Sweet',
-      reward: { type: 'fixed' as const, amount: 12000 },
-      matchScore: 90,
-      category: 'スイーツ',
-      location: '原宿',
-      status: '交渉中',
-    },
-  ],
-  applied: [
-    {
-      id: '6',
-      storeName: 'ラーメン 龍',
-      reward: { type: 'fixed' as const, amount: 8000 },
-      matchScore: 87,
-      category: 'ラーメン',
-      location: '池袋',
-      appliedDate: '2024/01/10',
-      status: '店舗確認中',
-    },
-    {
-      id: '7',
-      storeName: 'ブックカフェ READ',
-      reward: { type: 'performance' as const, amount: 6000, performanceRate: 3 },
-      matchScore: 83,
-      category: 'カフェ',
-      location: '下北沢',
-      appliedDate: '2024/01/08',
-      status: '店舗確認中',
-    },
-  ],
+    // 初期状態では空、スカウト承認時に動的に追加される
+  ] as Array<{
+    id: string;
+    storeName: string;
+    reward: {
+      type: 'fixed' | 'performance';
+      amount: number;
+      performanceRate?: number;
+    };
+    matchScore: number;
+    category: string;
+    location: string;
+    status: string;
+    deadline?: string;
+  }>,
+  applied: [] as Array<{
+    id: string;
+    storeName: string;
+    reward: {
+      type: 'fixed' | 'performance';
+      amount: number;
+      performanceRate?: number;
+    };
+    matchScore: number;
+    category: string;
+    location: string;
+    appliedDate: string;
+    status: string;
+  }>,
 };
 
 export default function ProjectsPage() {
@@ -87,14 +76,45 @@ export default function ProjectsPage() {
   const [showApplied, setShowApplied] = useState(false);
   const [declinedProjects, setDeclinedProjects] = useState<string[]>([]);
   const [approvedProjects, setApprovedProjects] = useState<string[]>([]);
+  const [projects, setProjects] = useState(sampleProjects);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // キャッシュからデータを復元
+  useEffect(() => {
+    // 重複データをクリーンアップ
+    cleanupAppliedProjects();
+    
+    const cachedDeclined = getCachedData<string[]>(CACHE_KEYS.DECLINED_PROJECTS, []);
+    const cachedApproved = getCachedData<string[]>(CACHE_KEYS.APPROVED_PROJECTS, []);
+    const cachedAppliedProjects = getCachedData<any[]>(CACHE_KEYS.APPLIED_PROJECTS, []);
+    const cachedInProgressProjects = getCachedData<any[]>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
+    
+    setDeclinedProjects(cachedDeclined);
+    setApprovedProjects(cachedApproved);
+    
+    if (cachedAppliedProjects.length > 0) {
+      setProjects(prev => ({
+        ...prev,
+        applied: cachedAppliedProjects
+      }));
+    }
+    
+    if (cachedInProgressProjects.length > 0) {
+      setProjects(prev => ({
+        ...prev,
+        inProgress: cachedInProgressProjects
+      }));
+    }
+  }, []);
 
   // URLパラメータからタブ情報を読み取って初期表示を設定
   useEffect(() => {
     const tab = searchParams.get('tab');
     const declined = searchParams.get('declined');
     const approved = searchParams.get('approved');
+    const applied = searchParams.get('applied');
+    const showAppliedParam = searchParams.get('showApplied');
     
     if (tab === 'inProgress') {
       setActiveTab('inProgress');
@@ -102,42 +122,135 @@ export default function ProjectsPage() {
       setActiveTab('scout');
     }
     
+    // ホームから応募された場合は応募済み欄を表示
+    if (showAppliedParam === 'true') {
+      setShowApplied(true);
+    }
+    
     // 辞退された案件をリストから削除
     if (declined) {
-      setDeclinedProjects(prev => [...prev, declined]);
+      const newDeclined = [...declinedProjects, declined];
+      setDeclinedProjects(newDeclined);
+      setCachedData(CACHE_KEYS.DECLINED_PROJECTS, newDeclined);
     }
     
     // 承認された案件を進行中に移動
     if (approved) {
-      setApprovedProjects(prev => [...prev, approved]);
+      const newApproved = [...approvedProjects, approved];
+      setApprovedProjects(newApproved);
+      setCachedData(CACHE_KEYS.APPROVED_PROJECTS, newApproved);
+      
+      // 承認された案件を進行中リストに追加
+      const approvedProject = sampleProjects.scout.find(p => p.id === approved);
+      if (approvedProject) {
+        setProjects(prev => {
+          // 既に進行中に存在するかチェック
+          const isAlreadyInProgress = prev.inProgress.some(p => p.id === approved);
+          if (isAlreadyInProgress) {
+            return prev; // 既に存在する場合は何もしない
+          }
+          
+          const inProgressProject = {
+            ...approvedProject,
+            status: '交渉中'
+          };
+          
+          const newInProgress = [...prev.inProgress, inProgressProject];
+          const newProjects = {
+            ...prev,
+            inProgress: newInProgress
+          };
+          // 進行中案件をキャッシュに保存
+          setCachedData(CACHE_KEYS.IN_PROGRESS_PROJECTS, newInProgress);
+          return newProjects;
+        });
+      }
+    }
+    
+    // ホームから応募された案件を応募済みに追加
+    if (applied) {
+      // 応募済み案件のデータを動的に作成
+      const appliedProject = findProjectById(applied);
+      if (appliedProject) {
+        setProjects(prev => {
+          // 既に存在する案件かチェック
+          const isAlreadyApplied = prev.applied.some(p => p.id === applied);
+          if (isAlreadyApplied) {
+            return prev; // 既に存在する場合は何もしない
+          }
+          
+          const newAppliedProject = {
+            ...appliedProject,
+            appliedDate: new Date().toLocaleDateString('ja-JP', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit' 
+            }).replace(/\//g, '/'),
+            status: '店舗確認中'
+          };
+          
+          const newProjects = {
+            ...prev,
+            applied: [...prev.applied, newAppliedProject]
+          };
+          // キャッシュに保存
+          setCachedData(CACHE_KEYS.APPLIED_PROJECTS, newProjects.applied);
+          return newProjects;
+        });
+      }
     }
   }, [searchParams]);
 
-  const tabs = [
-    { key: 'scout', label: 'スカウト', count: sampleProjects.scout.length },
-    { key: 'inProgress', label: '進行中', count: sampleProjects.inProgress.length },
-  ];
+  // プロジェクトIDから案件データを検索する関数
+  const findProjectById = (id: string) => {
+    // ホーム画面のサンプルデータから検索
+    const homeProjects = [
+      {
+        id: '1',
+        storeName: 'カフェ・ド・パリ',
+        reward: { type: 'fixed' as const, amount: 15000 },
+        matchScore: 95,
+        category: 'カフェ',
+        location: '渋谷',
+      },
+      {
+        id: '2',
+        storeName: 'イタリアン・ベラヴィスタ',
+        reward: { type: 'performance' as const, amount: 8000, performanceRate: 5 },
+        matchScore: 88,
+        category: 'イタリアン',
+        location: '新宿',
+      },
+      {
+        id: '3',
+        storeName: 'ヘアサロン STYLE',
+        reward: { type: 'fixed' as const, amount: 25000 },
+        matchScore: 92,
+        category: 'ビューティー',
+        location: '表参道',
+      },
+    ];
+    
+    return homeProjects.find(project => project.id === id);
+  };
 
   const getCurrentProjects = () => {
     if (activeTab === 'scout') {
       // スカウトタブでは辞退された案件と承認された案件を除外
-      return sampleProjects.scout.filter(project => 
+      return projects.scout.filter(project => 
         !declinedProjects.includes(project.id) && !approvedProjects.includes(project.id)
       );
     } else if (activeTab === 'inProgress') {
-      // 進行中タブでは元の進行中案件と承認された案件を表示
-      const originalInProgress = sampleProjects.inProgress || [];
-      const approvedScoutProjects = sampleProjects.scout.filter(project => 
-        approvedProjects.includes(project.id)
-      ).map(project => ({
-        ...project,
-        status: '交渉中' // 承認された案件には交渉中ステータスを追加
-      }));
-      
-      return [...originalInProgress, ...approvedScoutProjects];
+      // 進行中タブでは承認された案件のみを表示
+      return projects.inProgress || [];
     }
     return [];
   };
+
+  const tabs = [
+    { key: 'scout', label: 'スカウト', count: activeTab === 'scout' ? getCurrentProjects().length : projects.scout.filter(p => !declinedProjects.includes(p.id) && !approvedProjects.includes(p.id)).length },
+    { key: 'inProgress', label: '進行中', count: projects.inProgress.length },
+  ];
 
   if (showApplied) {
     return (
@@ -154,9 +267,9 @@ export default function ProjectsPage() {
         </div>
         
         <div className="bg-light-greige">
-          {sampleProjects.applied.length > 0 ? (
-            sampleProjects.applied.map((project) => (
-              <div key={project.id} className="bg-white p-4 border-b border-gray-100">
+          {projects.applied.length > 0 ? (
+            projects.applied.map((project, index) => (
+              <div key={`${project.id}-${index}`} className="bg-white p-4 border-b border-gray-100">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-bold text-smoky-navy text-base mb-2">{project.storeName}</h3>
@@ -198,11 +311,12 @@ export default function ProjectsPage() {
               <h3 className="text-lg font-medium text-smoky-navy mb-2">応募済みの案件はありません</h3>
               <p className="text-gray-600 text-sm">応募した案件がここに表示されます</p>
             </div>
-          )}
-        </div>
+                  )}
       </div>
-    );
-  }
+      <ClearCacheButton />
+    </div>
+  );
+}
 
   return (
     <div>
@@ -216,9 +330,9 @@ export default function ProjectsPage() {
         >
           <span>📋</span>
           応募済み案件を見る
-          <span className="bg-salmon-coral text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {sampleProjects.applied.length}
-          </span>
+                           <span className="bg-salmon-coral text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                   {projects.applied.length}
+                 </span>
         </button>
       </div>
       
@@ -231,8 +345,8 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab(tab.key as 'scout' | 'inProgress')}
               className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                 activeTab === tab.key
-                  ? 'text-salmon-coral bg-light-greige'
-                  : 'text-gray-600 hover:text-smoky-navy'
+                  ? 'text-salmon-coral bg-white'
+                  : 'text-gray-600 hover:text-smoky-navy bg-light-greige'
               }`}
             >
               {tab.label}
@@ -253,8 +367,8 @@ export default function ProjectsPage() {
       {/* コンパクトカード一覧 */}
       <div className="bg-light-greige">
         {getCurrentProjects().length > 0 ? (
-          getCurrentProjects().map((project) => (
-            <CompactProjectCard key={project.id} {...project} tab={activeTab} />
+          getCurrentProjects().map((project, index) => (
+            <CompactProjectCard key={`${project.id}-${index}-${activeTab}`} {...project} tab={activeTab} />
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">

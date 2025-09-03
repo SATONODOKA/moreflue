@@ -17,6 +17,7 @@ interface ProjectCardProps {
   imageUrl?: string;
   platforms: ('instagram' | 'tiktok' | 'twitter')[];
   isFollowing?: boolean;
+  hasApplied?: boolean;
 }
 
 const ProjectCard = ({
@@ -30,6 +31,7 @@ const ProjectCard = ({
   imageUrl,
   platforms,
   isFollowing = false,
+  hasApplied = false,
 }: ProjectCardProps) => {
   const router = useRouter();
 
@@ -180,12 +182,18 @@ const ProjectCard = ({
         </div>
 
         {/* 詳細ボタン */}
-        <button 
-          onClick={(e) => handleButtonClick(e, 'detail')}
-          className="w-full bg-salmon-coral text-white py-1.5 rounded-lg text-xs font-medium hover:bg-opacity-90 transition-colors border-0"
-        >
-          案件詳細を見る
-        </button>
+        {hasApplied ? (
+          <div className="w-full bg-gray-200 text-gray-600 py-1.5 rounded-lg text-xs font-medium text-center border-0">
+            応募済み
+          </div>
+        ) : (
+          <button 
+            onClick={(e) => handleButtonClick(e, 'detail')}
+            className="w-full bg-salmon-coral text-white py-1.5 rounded-lg text-xs font-medium hover:bg-opacity-90 transition-colors border-0"
+          >
+            案件詳細を見る
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProjectCard from '@/components/ProjectCard';
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
 
 // サンプルデータ
 const sampleProjects = {
@@ -88,8 +89,32 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'recommended' | 'following'>('recommended');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [projects, setProjects] = useState(sampleProjects);
+  const [appliedProjects, setAppliedProjects] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // キャッシュから応募済み案件を復元
+  useEffect(() => {
+    const cachedAppliedProjects = getCachedData<string[]>(CACHE_KEYS.HOME_APPLIED_PROJECTS, []);
+    setAppliedProjects(cachedAppliedProjects);
+  }, []);
+
+  // URLパラメータから応募情報を読み取る
+  useEffect(() => {
+    const applied = searchParams.get('applied');
+    if (applied) {
+      setAppliedProjects(prev => {
+        if (prev.includes(applied)) {
+          return prev; // 既に含まれている場合は変更なし
+        }
+        const newAppliedProjects = [...prev, applied];
+        // キャッシュに保存
+        setCachedData(CACHE_KEYS.HOME_APPLIED_PROJECTS, newAppliedProjects);
+        return newAppliedProjects;
+      });
+    }
+  }, [searchParams]);
 
   const tabs = [
     { key: 'recommended', label: 'おすすめ', icon: '✨' },
@@ -97,7 +122,9 @@ export default function Home() {
   ];
 
   const getCurrentProjects = () => {
-    return projects[activeTab] || [];
+    const allProjects = projects[activeTab] || [];
+    // 応募済み案件をフィードから除外
+    return allProjects.filter(project => !appliedProjects.includes(project.id));
   };
 
   const handleRefresh = async () => {
@@ -164,8 +191,8 @@ export default function Home() {
               onClick={() => setActiveTab(tab.key as 'recommended' | 'following')}
               className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                 activeTab === tab.key
-                  ? 'text-salmon-coral bg-light-greige'
-                  : 'text-gray-600 hover:text-smoky-navy'
+                  ? 'text-salmon-coral bg-white'
+                  : 'text-gray-600 hover:text-smoky-navy bg-light-greige'
               }`}
             >
               <span>{tab.icon}</span>
@@ -177,7 +204,7 @@ export default function Home() {
 
       {/* プルトゥリフレッシュインジケーター */}
       {isRefreshing && (
-        <div className="bg-light-greige py-4 text-center">
+        <div className="bg-white py-4 text-center">
           <div className="text-smoky-navy text-sm">更新中...</div>
         </div>
       )}
@@ -185,7 +212,7 @@ export default function Home() {
       {/* タイムライン */}
       <div 
         ref={scrollRef}
-        className="bg-light-greige"
+        className="bg-white"
         onScroll={handleScroll}
         onTouchStart={(e) => {
           const startX = e.touches[0].clientX;
@@ -208,11 +235,15 @@ export default function Home() {
           document.addEventListener('touchend', handleTouchEnd);
         }}
       >
-        {getCurrentProjects().length > 0 ? (
-          getCurrentProjects().map((project) => (
-            <ProjectCard key={project.id} {...project} />
-          ))
-        ) : (
+                         {getCurrentProjects().length > 0 ? (
+                   getCurrentProjects().map((project) => (
+                     <ProjectCard 
+                       key={project.id} 
+                       {...project} 
+                       hasApplied={appliedProjects.includes(project.id)}
+                     />
+                   ))
+                 ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <span className="text-6xl mb-4">📭</span>
             <h3 className="text-lg font-medium text-smoky-navy mb-2">

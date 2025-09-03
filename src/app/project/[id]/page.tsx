@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
 
 // サンプル詳細データ
 const projectDetails: { [key: string]: any } = {
@@ -45,39 +46,91 @@ const projectDetails: { [key: string]: any } = {
       timeline: '投稿から2週間以内',
       additionalNotes: 'ディナータイムの撮影を推奨します'
     }
-  }
-};
-
-// サンプルチャットデータ
-const sampleChatMessages = [
-  {
-    id: '1',
-    sender: 'store',
-    message: 'こんにちは！案件にご応募いただきありがとうございます。',
-    timestamp: '10:30',
-    isRead: true
-  },
-  {
-    id: '2',
-    sender: 'user',
-    message: 'こちらこそ、よろしくお願いいたします！撮影の詳細について教えていただけますか？',
-    timestamp: '10:35',
-    isRead: true
-  },
-  {
+      },
+  '3': {
     id: '3',
-    sender: 'store',
-    message: '撮影は平日の14時〜16時頃が店内の雰囲気も良くおすすめです。ご都合はいかがでしょうか？',
-    timestamp: '10:40',
-    isRead: true
+    storeName: 'ヘアサロン STYLE',
+    category: 'ビューティー',
+    location: '表参道',
+    imageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=400&fit=crop',
+    story: '表参道で20年の実績を持つ、トレンドを牽引するヘアサロン。お客様一人ひとりの骨格や髪質に合わせたパーソナルな提案と、再現性の高いカット技術が強みです。最新のヘアケア製品も取り揃え、髪の悩みを根本から解決します。洗練された空間で、新しい自分に出会える体験を提供します。',
+    reward: { type: 'fixed', amount: 25000 },
+    matchScore: 92,
+    platforms: ['instagram', 'tiktok', 'twitter'],
+    isFollowing: false,
+    details: {
+      travelTime: '表参道駅から徒歩3分',
+      postRequirements: 'ビフォーアフター写真2枚 + ストーリーズ5投稿',
+      preApproval: true,
+      performanceGoals: '新規顧客来店数3名以上、指名予約1名以上',
+      timeline: '施術から1週間以内に投稿',
+      additionalNotes: '施術内容については事前に打ち合わせが必要です'
+    }
   },
-  {
+  '4': {
     id: '4',
-    sender: 'user',
-    message: '来週の火曜日14時からでお願いできますでしょうか？',
-    timestamp: '10:45',
-    isRead: false
+    storeName: 'フィットネスジム POWER',
+    category: 'フィットネス',
+    location: '恵比寿',
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop',
+    story: '恵比寿駅直結の最新設備を誇るフィットネスジム。初心者から上級者まで、一人ひとりの目標に合わせたパーソナルトレーニングを提供しています。清潔で開放的な空間と、経験豊富なトレーナーが皆様の健康とボディメイクをサポートします。',
+    reward: { type: 'performance', amount: 10000, performanceRate: 8 },
+    matchScore: 85,
+    platforms: ['instagram', 'tiktok'],
+    isFollowing: false,
+    details: {
+      travelTime: '恵比寿駅から徒歩1分',
+      postRequirements: 'トレーニング動画1本 + ビフォーアフター写真',
+      preApproval: false,
+      performanceGoals: '新規入会者3名以上で成果報酬発生',
+      timeline: '体験から2週間以内',
+      additionalNotes: 'トレーニングウェアは貸し出し可能です'
+    }
+  },
+  '5': {
+    id: '5',
+    storeName: 'スイーツカフェ Sweet',
+    category: 'スイーツ',
+    location: '原宿',
+    imageUrl: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&h=400&fit=crop',
+    story: '原宿の中心地にある、インスタ映えするスイーツが人気のカフェです。季節のフルーツを使った色鮮やかなパフェと、手作りケーキが自慢。可愛らしい店内で、特別な時間をお過ごしいただけます。若い女性を中心に多くのお客様に愛されています。',
+    reward: { type: 'fixed', amount: 12000 },
+    matchScore: 90,
+    platforms: ['instagram', 'tiktok'],
+    isFollowing: false,
+    details: {
+      travelTime: '原宿駅から徒歩5分',
+      postRequirements: 'スイーツの写真2枚 + ストーリーズ3投稿',
+      preApproval: true,
+      performanceGoals: '来店者数8名以上、投稿いいね数500以上',
+      timeline: '投稿から10日以内',
+      additionalNotes: '撮影用の小道具もご用意しています'
+    }
   }
+  };
+
+// チャットメッセージの型定義
+interface ChatMessage {
+  id: string;
+  sender: 'store' | 'user';
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
+// サンプルチャットデータ（初期は空）
+const sampleChatMessages: ChatMessage[] = [];
+
+// モック返信パターン
+const mockReplies = [
+  'ありがとうございます！詳細について確認させていただきます。',
+  'かしこまりました。少々お時間をいただけますでしょうか。',
+  'ご連絡いただきありがとうございます。確認いたします。',
+  '承知いたしました。後ほど詳細をお送りします。',
+  'お疲れ様です！内容を確認させていただきました。',
+  'ご質問ありがとうございます。回答いたします。',
+  'お忙しい中ありがとうございます。検討いたします。',
+  'ご提案いただきありがとうございます！',
 ];
 
 export default function ProjectDetailPage() {
@@ -148,23 +201,49 @@ export default function ProjectDetailPage() {
     setHasApplied(true);
     setShowSuccessMessage(true);
     
-    // 成功メッセージを3秒後に非表示
+    // ホーム画面の応募済み状態を即座に更新
+    const currentApplied = getCachedData<string[]>(CACHE_KEYS.HOME_APPLIED_PROJECTS, []);
+    if (!currentApplied.includes(params.id as string)) {
+      const newApplied = [...currentApplied, params.id as string];
+      setCachedData(CACHE_KEYS.HOME_APPLIED_PROJECTS, newApplied);
+    }
+    
+    // 成功メッセージを3秒後に非表示にして案件管理の応募済み欄に移動
     setTimeout(() => {
       setShowSuccessMessage(false);
+      // 応募情報を案件管理に渡して応募済み欄を表示
+      router.push(`/projects?applied=${params.id}&showApplied=true`);
     }, 3000);
   };
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      const newMsg = {
+      const userMsg: ChatMessage = {
         id: Date.now().toString(),
-        sender: 'user' as const,
+        sender: 'user',
         message: newMessage.trim(),
         timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
         isRead: false
       };
-      setChatMessages([...chatMessages, newMsg]);
+      
+      // ユーザーメッセージを追加
+      const updatedMessages = [...chatMessages, userMsg];
+      setChatMessages(updatedMessages);
       setNewMessage('');
+      
+      // 1-3秒後にモック返信を追加
+      const replyDelay = Math.random() * 2000 + 1000; // 1-3秒のランダム遅延
+      setTimeout(() => {
+        const randomReply = mockReplies[Math.floor(Math.random() * mockReplies.length)];
+        const storeMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'store',
+          message: randomReply,
+          timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+          isRead: true
+        };
+        setChatMessages(prev => [...prev, storeMsg]);
+      }, replyDelay);
     }
   };
 
@@ -231,7 +310,7 @@ export default function ProjectDetailPage() {
         // 進行中案件の表示（案件概要＋チャット）
         <div className="flex flex-col h-screen">
           {/* 案件概要（固定） */}
-          <div className="bg-white p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="bg-white p-4 border-b border-gray-300 flex-shrink-0">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-salmon-coral rounded-full flex items-center justify-center text-white text-lg font-bold">
                 {project.storeName.charAt(0)}
@@ -259,39 +338,56 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* チャット欄 */}
-          <div className="flex-1 flex flex-col bg-light-greige">
-            {/* メッセージリスト */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {chatMessages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                    msg.sender === 'user'
-                      ? 'bg-salmon-coral text-white'
-                      : 'bg-white text-smoky-navy'
-                  }`}>
-                    <p className="text-sm">{msg.message}</p>
-                    <p className={`text-xs mt-1 ${
-                      msg.sender === 'user' ? 'text-white opacity-70' : 'text-gray-500'
-                    }`}>
-                      {msg.timestamp}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                     {/* チャット欄 */}
+           <div className="flex-1 flex flex-col bg-white">
+             {/* メッセージリスト */}
+             <div className="flex-1 overflow-y-auto p-4 space-y-3">
+               {chatMessages.length === 0 ? (
+                 <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                   <span className="text-6xl mb-4">💬</span>
+                   <h3 className="text-lg font-medium text-smoky-navy mb-2">
+                     チャットを開始しましょう
+                   </h3>
+                   <p className="text-gray-600 text-sm">
+                     店舗とのやり取りがここに表示されます
+                   </p>
+                 </div>
+               ) : (
+                 chatMessages.map((msg) => (
+                   <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                     <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                       msg.sender === 'user'
+                         ? 'bg-salmon-coral text-white'
+                         : 'bg-white text-smoky-navy'
+                     }`}>
+                       <p className="text-sm">{msg.message}</p>
+                       <p className={`text-xs mt-1 ${
+                         msg.sender === 'user' ? 'text-white opacity-70' : 'text-gray-500'
+                       }`}>
+                         {msg.timestamp}
+                       </p>
+                     </div>
+                   </div>
+                 ))
+               )}
+             </div>
 
-            {/* メッセージ入力欄 */}
-            <div className="bg-white p-4 border-t border-gray-200">
+                         {/* メッセージ入力欄 */}
+             <div className="bg-white p-4 border-t border-gray-300">
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="メッセージを入力..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-salmon-coral"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
+                                 <input
+                   type="text"
+                   value={newMessage}
+                   onChange={(e) => setNewMessage(e.target.value)}
+                   placeholder="メッセージを入力..."
+                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                   onKeyPress={(e) => {
+                     if (e.key === 'Enter' && !e.shiftKey) {
+                       e.preventDefault();
+                       handleSendMessage();
+                     }
+                   }}
+                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim()}

@@ -34,7 +34,13 @@ const CompactProjectCard = ({
   const router = useRouter();
 
   const handleCardClick = () => {
-    router.push(`/project/${id}?tab=${tab}&source=scout`);
+    if (tab === 'inProgress') {
+      // 進行中タブの場合は必ずチャット画面を開く
+      router.push(`/project/${id}?tab=inProgress&source=scout`);
+    } else {
+      // スカウトタブの場合は詳細画面を開く
+      router.push(`/project/${id}?tab=${tab}&source=scout`);
+    }
   };
 
   return (
