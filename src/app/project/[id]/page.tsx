@@ -52,6 +52,8 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   const project = projectDetails[params.id as string];
   
@@ -89,8 +91,25 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleApply = () => {
+    setHasApplied(true);
+    setShowSuccessMessage(true);
+    
+    // 成功メッセージを3秒後に非表示
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 3000);
+  };
+
   return (
     <div className="min-h-screen bg-light-greige">
+      {/* 成功メッセージ */}
+      {showSuccessMessage && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-green-500 text-white p-4 text-center">
+          <p className="font-medium">応募ありがとうございます！店舗からのリアクションがあればお知らせします</p>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <header className="bg-white px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center gap-3">
@@ -127,12 +146,12 @@ export default function ProjectDetailPage() {
         {/* 基本情報 */}
         <div className="bg-white rounded-lg p-4 mb-4">
           <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold text-smoky-navy mb-1">{project.storeName}</h2>
-              <p className="text-gray-600 text-sm mb-2">{project.category} • {project.location}</p>
+              <p className="text-gray-600 text-sm mb-3">{project.category} • {project.location}</p>
               
-              {/* 報酬とマッチ度 */}
-              <div className="flex items-center gap-3 mb-3">
+              {/* 報酬とマッチ度 - レイアウト改善 */}
+              <div className="space-y-2">
                 <div className="text-salmon-coral font-bold text-lg">
                   {project.reward.type === 'fixed' ? (
                     <span>¥{project.reward.amount.toLocaleString()}</span>
@@ -140,8 +159,8 @@ export default function ProjectDetailPage() {
                     <span>¥{project.reward.amount.toLocaleString()} + 成果報酬{project.reward.performanceRate}%</span>
                   )}
                 </div>
-                <div className="bg-sunset-yellow text-smoky-navy px-3 py-1 rounded-full text-sm font-bold">
-                  AIによるおすすめ度 {project.matchScore}%
+                <div className="bg-gray-100 text-smoky-navy px-3 py-1 rounded-full text-sm font-medium inline-block">
+                  おすすめ度 {project.matchScore}%
                 </div>
               </div>
             </div>
@@ -149,7 +168,7 @@ export default function ProjectDetailPage() {
             {/* フォローボタン */}
             <button 
               onClick={() => setIsFollowing(!isFollowing)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ml-3 ${
                 isFollowing 
                   ? 'bg-gray-200 text-gray-600' 
                   : 'bg-salmon-coral text-white hover:bg-opacity-90'
@@ -176,9 +195,11 @@ export default function ProjectDetailPage() {
               <span className="font-medium text-smoky-navy">{project.details.travelTime}</span>
             </div>
             
-            <div className="flex justify-between items-start py-2 border-b border-gray-100">
-              <span className="text-gray-600">投稿内容</span>
-              <span className="font-medium text-smoky-navy text-right">{project.details.postRequirements}</span>
+            <div className="py-2 border-b border-gray-100">
+              <div className="flex justify-between items-start">
+                <span className="text-gray-600 flex-shrink-0 mr-4">投稿内容</span>
+                <span className="font-medium text-smoky-navy text-right">{project.details.postRequirements}</span>
+              </div>
             </div>
             
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -192,9 +213,11 @@ export default function ProjectDetailPage() {
               </span>
             </div>
             
-            <div className="flex justify-between items-start py-2 border-b border-gray-100">
-              <span className="text-gray-600">成果条件</span>
-              <span className="font-medium text-smoky-navy text-right">{project.details.performanceGoals}</span>
+            <div className="py-2 border-b border-gray-100">
+              <div className="flex justify-between items-start">
+                <span className="text-gray-600 flex-shrink-0 mr-4">成果条件</span>
+                <span className="font-medium text-smoky-navy text-right">{project.details.performanceGoals}</span>
+              </div>
             </div>
             
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -213,24 +236,22 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* アクションボタン */}
-        <div className="space-y-3">
-          <button 
-            onClick={() => router.push('/messages')}
-            className="w-full bg-salmon-coral text-white py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-colors border-0"
-          >
-            この案件に応募する
-          </button>
-          
-          <button 
-            onClick={() => router.push('/messages')}
-            className="w-full bg-white border-2 border-smoky-navy text-smoky-navy py-3 rounded-lg font-medium hover:bg-smoky-navy hover:text-white transition-colors"
-          >
-            チャットで問い合わせ
-          </button>
+        {/* 応募ボタン */}
+        <div className="mb-6">
+          {hasApplied ? (
+            <div className="w-full bg-gray-200 text-gray-600 py-4 rounded-lg font-bold text-lg text-center">
+              応募済み
+            </div>
+          ) : (
+            <button 
+              onClick={handleApply}
+              className="w-full bg-salmon-coral text-white py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-colors border-0"
+            >
+              この案件に応募する
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

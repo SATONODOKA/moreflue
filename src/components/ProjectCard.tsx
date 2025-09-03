@@ -97,7 +97,7 @@ const ProjectCard = ({
         <div className="flex items-center gap-2">
           {/* AIマッチ度 */}
           <div className="flex items-center gap-1">
-            <div className="bg-sunset-yellow text-smoky-navy px-2 py-1 rounded-full text-xs font-bold">
+            <div className="bg-gray-100 text-smoky-navy px-2 py-1 rounded-full text-xs font-bold">
               AIによるおすすめ度 {matchScore}%
             </div>
           </div>
