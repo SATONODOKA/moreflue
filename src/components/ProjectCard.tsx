@@ -66,7 +66,7 @@ const ProjectCard = ({
 
   const handleCardClick = () => {
     if (id) {
-      router.push(`/project/${id}`);
+      router.push(`/project/${id}?source=home`);
     }
   };
 

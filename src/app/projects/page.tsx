@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CompactProjectCard from '@/components/CompactProjectCard';
 
@@ -85,7 +85,33 @@ const sampleProjects = {
 export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState<'scout' | 'inProgress'>('scout');
   const [showApplied, setShowApplied] = useState(false);
+  const [declinedProjects, setDeclinedProjects] = useState<string[]>([]);
+  const [approvedProjects, setApprovedProjects] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URLパラメータからタブ情報を読み取って初期表示を設定
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const declined = searchParams.get('declined');
+    const approved = searchParams.get('approved');
+    
+    if (tab === 'inProgress') {
+      setActiveTab('inProgress');
+    } else if (tab === 'scout') {
+      setActiveTab('scout');
+    }
+    
+    // 辞退された案件をリストから削除
+    if (declined) {
+      setDeclinedProjects(prev => [...prev, declined]);
+    }
+    
+    // 承認された案件を進行中に移動
+    if (approved) {
+      setApprovedProjects(prev => [...prev, approved]);
+    }
+  }, [searchParams]);
 
   const tabs = [
     { key: 'scout', label: 'スカウト', count: sampleProjects.scout.length },
@@ -93,7 +119,24 @@ export default function ProjectsPage() {
   ];
 
   const getCurrentProjects = () => {
-    return sampleProjects[activeTab] || [];
+    if (activeTab === 'scout') {
+      // スカウトタブでは辞退された案件と承認された案件を除外
+      return sampleProjects.scout.filter(project => 
+        !declinedProjects.includes(project.id) && !approvedProjects.includes(project.id)
+      );
+    } else if (activeTab === 'inProgress') {
+      // 進行中タブでは元の進行中案件と承認された案件を表示
+      const originalInProgress = sampleProjects.inProgress || [];
+      const approvedScoutProjects = sampleProjects.scout.filter(project => 
+        approvedProjects.includes(project.id)
+      ).map(project => ({
+        ...project,
+        status: '交渉中' // 承認された案件には交渉中ステータスを追加
+      }));
+      
+      return [...originalInProgress, ...approvedScoutProjects];
+    }
+    return [];
   };
 
   if (showApplied) {
@@ -211,7 +254,7 @@ export default function ProjectsPage() {
       <div className="bg-light-greige">
         {getCurrentProjects().length > 0 ? (
           getCurrentProjects().map((project) => (
-            <CompactProjectCard key={project.id} {...project} />
+            <CompactProjectCard key={project.id} {...project} tab={activeTab} />
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">

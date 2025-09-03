@@ -16,6 +16,7 @@ interface CompactProjectCardProps {
   status?: string; // 進行中タブの場合のステータス
   isUrgent?: boolean;
   deadline?: string;
+  tab?: 'scout' | 'inProgress'; // どのタブから来たかを識別
 }
 
 const CompactProjectCard = ({
@@ -28,11 +29,12 @@ const CompactProjectCard = ({
   status,
   isUrgent = false,
   deadline,
+  tab = 'scout', // デフォルトはスカウト
 }: CompactProjectCardProps) => {
   const router = useRouter();
 
   const handleCardClick = () => {
-    router.push(`/project/${id}`);
+    router.push(`/project/${id}?tab=${tab}&source=scout`);
   };
 
   return (

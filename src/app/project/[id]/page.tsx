@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // サンプル詳細データ
@@ -48,12 +48,53 @@ const projectDetails: { [key: string]: any } = {
   }
 };
 
+// サンプルチャットデータ
+const sampleChatMessages = [
+  {
+    id: '1',
+    sender: 'store',
+    message: 'こんにちは！案件にご応募いただきありがとうございます。',
+    timestamp: '10:30',
+    isRead: true
+  },
+  {
+    id: '2',
+    sender: 'user',
+    message: 'こちらこそ、よろしくお願いいたします！撮影の詳細について教えていただけますか？',
+    timestamp: '10:35',
+    isRead: true
+  },
+  {
+    id: '3',
+    sender: 'store',
+    message: '撮影は平日の14時〜16時頃が店内の雰囲気も良くおすすめです。ご都合はいかがでしょうか？',
+    timestamp: '10:40',
+    isRead: true
+  },
+  {
+    id: '4',
+    sender: 'user',
+    message: '来週の火曜日14時からでお願いできますでしょうか？',
+    timestamp: '10:45',
+    isRead: false
+  }
+];
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // URLパラメータからタブ情報とソース情報を取得
+  const tab = searchParams.get('tab') || 'scout'; // デフォルトはスカウト
+  const source = searchParams.get('source') || 'scout'; // デフォルトはスカウト
+  
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<'approve' | 'decline' | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState(sampleChatMessages);
   
   const project = projectDetails[params.id as string];
   
@@ -91,6 +132,18 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleApprove = () => {
+    setShowConfirmDialog(null);
+    // 承認された案件IDを渡して進行中タブに移動
+    router.push(`/projects?tab=inProgress&approved=${params.id}`);
+  };
+
+  const handleDecline = () => {
+    setShowConfirmDialog(null);
+    // 辞退された案件IDを渡してスカウトタブに戻る
+    router.push(`/projects?tab=scout&declined=${params.id}`);
+  };
+
   const handleApply = () => {
     setHasApplied(true);
     setShowSuccessMessage(true);
@@ -101,12 +154,61 @@ export default function ProjectDetailPage() {
     }, 3000);
   };
 
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      const newMsg = {
+        id: Date.now().toString(),
+        sender: 'user' as const,
+        message: newMessage.trim(),
+        timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      setChatMessages([...chatMessages, newMsg]);
+      setNewMessage('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-light-greige">
-      {/* 成功メッセージ */}
-      {showSuccessMessage && (
+      {/* 成功メッセージ（ホームからの応募時のみ表示） */}
+      {showSuccessMessage && source === 'home' && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-green-500 text-white p-4 text-center">
           <p className="font-medium">応募ありがとうございます！店舗からのリアクションがあればお知らせします</p>
+        </div>
+      )}
+
+      {/* 確認ダイアログ */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-smoky-navy mb-4 text-center">
+              {showConfirmDialog === 'approve' ? '本当に承認しますか？' : '本当に辞退しますか？'}
+            </h3>
+            <p className="text-gray-600 text-sm mb-6 text-center">
+              {showConfirmDialog === 'approve' 
+                ? 'この案件を承認すると、進行中タブに移動し、店舗とのチャットが開始されます。'
+                : 'この案件を辞退すると、リストから削除され、元に戻すことはできません。'
+              }
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmDialog(null)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={showConfirmDialog === 'approve' ? handleApprove : handleDecline}
+                className={`flex-1 py-3 rounded-lg font-medium text-white transition-colors ${
+                  showConfirmDialog === 'approve'
+                    ? 'bg-salmon-coral hover:bg-opacity-90'
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+              >
+                {showConfirmDialog === 'approve' ? '承認する' : '辞退する'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -119,139 +221,241 @@ export default function ProjectDetailPage() {
           >
             ←
           </button>
-          <h1 className="text-lg font-bold text-smoky-navy">案件詳細</h1>
+          <h1 className="text-lg font-bold text-smoky-navy">
+            {tab === 'inProgress' ? '進行中案件' : '案件詳細'}
+          </h1>
         </div>
       </header>
 
-      {/* メイン画像 */}
-      <div className="w-full h-64 relative">
-        <img 
-          src={project.imageUrl} 
-          alt={project.storeName}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-        
-        {/* 画像上のプラットフォームアイコン */}
-        <div className="absolute top-4 left-4 flex gap-2">
-          {project.platforms.map((platform: string, index: number) => (
-            <div key={index}>
-              {getPlatformIcon(platform)}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-4 py-4">
-        {/* 基本情報 */}
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-smoky-navy mb-1">{project.storeName}</h2>
-              <p className="text-gray-600 text-sm mb-3">{project.category} • {project.location}</p>
-              
-              {/* 報酬とマッチ度 - レイアウト改善 */}
-              <div className="space-y-2">
-                <div className="text-salmon-coral font-bold text-lg">
-                  {project.reward.type === 'fixed' ? (
-                    <span>¥{project.reward.amount.toLocaleString()}</span>
-                  ) : (
-                    <span>¥{project.reward.amount.toLocaleString()} + 成果報酬{project.reward.performanceRate}%</span>
-                  )}
-                </div>
-                <div className="bg-gray-100 text-smoky-navy px-3 py-1 rounded-full text-sm font-medium inline-block">
-                  おすすめ度 {project.matchScore}%
+      {tab === 'inProgress' ? (
+        // 進行中案件の表示（案件概要＋チャット）
+        <div className="flex flex-col h-screen">
+          {/* 案件概要（固定） */}
+          <div className="bg-white p-4 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-salmon-coral rounded-full flex items-center justify-center text-white text-lg font-bold">
+                {project.storeName.charAt(0)}
+              </div>
+              <div>
+                <h3 className="font-bold text-smoky-navy">{project.storeName}</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>{project.category} • {project.location}</span>
+                  <span className="text-salmon-coral font-bold">
+                    ¥{project.reward.amount.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
-            
-            {/* フォローボタン */}
-            <button 
-              onClick={() => setIsFollowing(!isFollowing)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ml-3 ${
-                isFollowing 
-                  ? 'bg-gray-200 text-gray-600' 
-                  : 'bg-salmon-coral text-white hover:bg-opacity-90'
-              }`}
-            >
-              {isFollowing ? 'フォロー中' : 'フォロー'}
-            </button>
-          </div>
-        </div>
-
-        {/* 店舗ストーリー */}
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <h3 className="text-lg font-bold text-smoky-navy mb-3">店舗のこだわり</h3>
-          <p className="text-gray-700 leading-relaxed">{project.story}</p>
-        </div>
-
-        {/* 詳細条件 */}
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <h3 className="text-lg font-bold text-smoky-navy mb-4">詳細条件</h3>
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">移動時間</span>
-              <span className="font-medium text-smoky-navy">{project.details.travelTime}</span>
-            </div>
-            
-            <div className="py-2 border-b border-gray-100">
-              <div className="flex justify-between items-start">
-                <span className="text-gray-600 flex-shrink-0 mr-4">投稿内容</span>
-                <span className="font-medium text-smoky-navy text-right">{project.details.postRequirements}</span>
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">事前確認</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                project.details.preApproval 
-                  ? 'bg-sunset-yellow text-smoky-navy' 
-                  : 'bg-green-100 text-green-800'
-              }`}>
-                {project.details.preApproval ? '要承認' : '不要'}
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                交渉中
+              </span>
+              <span className="bg-sunset-yellow text-smoky-navy text-xs px-2 py-1 rounded-full">
+                要事前確認
+              </span>
+              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                締切: 1/31
               </span>
             </div>
-            
-            <div className="py-2 border-b border-gray-100">
-              <div className="flex justify-between items-start">
-                <span className="text-gray-600 flex-shrink-0 mr-4">成果条件</span>
-                <span className="font-medium text-smoky-navy text-right">{project.details.performanceGoals}</span>
+          </div>
+
+          {/* チャット欄 */}
+          <div className="flex-1 flex flex-col bg-light-greige">
+            {/* メッセージリスト */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                    msg.sender === 'user'
+                      ? 'bg-salmon-coral text-white'
+                      : 'bg-white text-smoky-navy'
+                  }`}>
+                    <p className="text-sm">{msg.message}</p>
+                    <p className={`text-xs mt-1 ${
+                      msg.sender === 'user' ? 'text-white opacity-70' : 'text-gray-500'
+                    }`}>
+                      {msg.timestamp}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* メッセージ入力欄 */}
+            <div className="bg-white p-4 border-t border-gray-200">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="メッセージを入力..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                  className="bg-salmon-coral text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  送信
+                </button>
               </div>
             </div>
-            
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">実施期間</span>
-              <span className="font-medium text-smoky-navy">{project.details.timeline}</span>
-            </div>
-            
-            {project.details.additionalNotes && (
-              <div className="mt-4 p-3 bg-light-greige rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">補足：</span>
-                  {project.details.additionalNotes}
-                </p>
-              </div>
-            )}
           </div>
         </div>
-
-        {/* 応募ボタン */}
-        <div className="mb-6">
-          {hasApplied ? (
-            <div className="w-full bg-gray-200 text-gray-600 py-4 rounded-lg font-bold text-lg text-center">
-              応募済み
+      ) : (
+        // スカウト案件の表示（従来の詳細＋承認・辞退ボタン）
+        <>
+          {/* メイン画像 */}
+          <div className="w-full h-64 relative">
+            <img 
+              src={project.imageUrl} 
+              alt={project.storeName}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+            
+            {/* 画像上のプラットフォームアイコン */}
+            <div className="absolute top-4 left-4 flex gap-2">
+              {project.platforms.map((platform: string, index: number) => (
+                <div key={index}>
+                  {getPlatformIcon(platform)}
+                </div>
+              ))}
             </div>
-          ) : (
-            <button 
-              onClick={handleApply}
-              className="w-full bg-salmon-coral text-white py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-colors border-0"
-            >
-              この案件に応募する
-            </button>
-          )}
-        </div>
-      </div>
+          </div>
+
+          <div className="px-4 py-4">
+            {/* 基本情報 */}
+            <div className="bg-white rounded-lg p-4 mb-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-smoky-navy mb-1">{project.storeName}</h2>
+                  <p className="text-gray-600 text-sm mb-3">{project.category} • {project.location}</p>
+                  
+                  {/* 報酬とマッチ度 - レイアウト改善 */}
+                  <div className="space-y-2">
+                    <div className="text-salmon-coral font-bold text-lg">
+                      {project.reward.type === 'fixed' ? (
+                        <span>¥{project.reward.amount.toLocaleString()}</span>
+                      ) : (
+                        <span>¥{project.reward.amount.toLocaleString()} + 成果報酬{project.reward.performanceRate}%</span>
+                      )}
+                    </div>
+                    <div className="bg-gray-100 text-smoky-navy px-3 py-1 rounded-full text-sm font-medium inline-block">
+                      おすすめ度 {project.matchScore}%
+                    </div>
+                  </div>
+                </div>
+                
+                {/* フォローボタン */}
+                <button 
+                  onClick={() => setIsFollowing(!isFollowing)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ml-3 ${
+                    isFollowing 
+                      ? 'bg-gray-200 text-gray-600' 
+                      : 'bg-salmon-coral text-white hover:bg-opacity-90'
+                  }`}
+                >
+                  {isFollowing ? 'フォロー中' : 'フォロー'}
+                </button>
+              </div>
+            </div>
+
+            {/* 店舗ストーリー */}
+            <div className="bg-white rounded-lg p-4 mb-4">
+              <h3 className="text-lg font-bold text-smoky-navy mb-3">店舗のこだわり</h3>
+              <p className="text-gray-700 leading-relaxed">{project.story}</p>
+            </div>
+
+            {/* 詳細条件 */}
+            <div className="bg-white rounded-lg p-4 mb-4">
+              <h3 className="text-lg font-bold text-smoky-navy mb-4">詳細条件</h3>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">移動時間</span>
+                  <span className="font-medium text-smoky-navy">{project.details.travelTime}</span>
+                </div>
+                
+                <div className="py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0 mr-4">投稿内容</span>
+                    <span className="font-medium text-smoky-navy text-right">{project.details.postRequirements}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">事前確認</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    project.details.preApproval 
+                      ? 'bg-sunset-yellow text-smoky-navy' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {project.details.preApproval ? '要承認' : '不要'}
+                  </span>
+                </div>
+                
+                <div className="py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0 mr-4">成果条件</span>
+                    <span className="font-medium text-smoky-navy text-right">{project.details.performanceGoals}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">実施期間</span>
+                  <span className="font-medium text-smoky-navy">{project.details.timeline}</span>
+                </div>
+                
+                {project.details.additionalNotes && (
+                  <div className="mt-4 p-3 bg-light-greige rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">補足：</span>
+                      {project.details.additionalNotes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+                         {/* ボタン表示（ソースに応じて切り替え） */}
+             {source === 'home' ? (
+               // ホームから来た場合：応募ボタン
+               <div className="mb-6">
+                 {hasApplied ? (
+                   <div className="w-full bg-gray-200 text-gray-600 py-4 rounded-lg font-bold text-lg text-center">
+                     応募済み
+                   </div>
+                 ) : (
+                   <button 
+                     onClick={handleApply}
+                     className="w-full bg-salmon-coral text-white py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-colors border-0"
+                   >
+                     この案件に応募する
+                   </button>
+                 )}
+               </div>
+             ) : (
+               // スカウトから来た場合：承認・辞退ボタン
+               <div className="flex gap-3 mb-6">
+                 <button 
+                   onClick={() => setShowConfirmDialog('decline')}
+                   className="flex-1 bg-gray-200 text-gray-700 py-4 rounded-lg font-bold text-lg hover:bg-gray-300 transition-colors"
+                 >
+                   辞退する
+                 </button>
+                 <button 
+                   onClick={() => setShowConfirmDialog('approve')}
+                   className="flex-1 bg-salmon-coral text-white py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-colors"
+                 >
+                   承認する
+                 </button>
+               </div>
+             )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
