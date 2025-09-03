@@ -1,3 +1,7 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 interface ProjectCardProps {
   id?: string;
   storeName: string;
@@ -16,7 +20,7 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({
-  id: _id,
+  id,
   storeName,
   reward,
   matchScore,
@@ -27,6 +31,8 @@ const ProjectCard = ({
   platforms,
   isFollowing = false,
 }: ProjectCardProps) => {
+  const router = useRouter();
+
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'instagram':
@@ -58,8 +64,24 @@ const ProjectCard = ({
     }
   };
 
+  const handleCardClick = () => {
+    if (id) {
+      router.push(`/project/${id}`);
+    }
+  };
+
+  const handleButtonClick = (e: React.MouseEvent, action: string) => {
+    e.stopPropagation(); // カードクリックイベントを阻止
+    if (action === 'detail') {
+      handleCardClick();
+    }
+  };
+
   return (
-    <div className="bg-white mb-1">
+    <div 
+      className="bg-white mb-1 cursor-pointer hover:bg-gray-50 transition-colors"
+      onClick={handleCardClick}
+    >
       {/* ヘッダー部分 */}
       <div className="flex items-center justify-between p-3 pb-2">
         <div className="flex items-center flex-1">
@@ -82,6 +104,10 @@ const ProjectCard = ({
           
           {/* フォローボタン */}
           <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              // フォロー処理
+            }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               isFollowing 
                 ? 'bg-gray-200 text-gray-600' 
@@ -122,7 +148,13 @@ const ProjectCard = ({
           </div>
           
           {/* 保存ボタン */}
-          <button className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              // 保存処理
+            }}
+            className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors"
+          >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
             </svg>
@@ -130,7 +162,7 @@ const ProjectCard = ({
         </div>
       </div>
 
-      {/* 報酬と条件部分 - 白いラインなし */}
+      {/* 報酬と条件部分 */}
       <div className="p-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="text-salmon-coral font-bold text-base">
@@ -148,7 +180,10 @@ const ProjectCard = ({
         </div>
 
         {/* 詳細ボタン */}
-        <button className="w-full bg-salmon-coral text-white py-1.5 rounded-lg text-xs font-medium hover:bg-opacity-90 transition-colors border-0">
+        <button 
+          onClick={(e) => handleButtonClick(e, 'detail')}
+          className="w-full bg-salmon-coral text-white py-1.5 rounded-lg text-xs font-medium hover:bg-opacity-90 transition-colors border-0"
+        >
           案件詳細を見る
         </button>
       </div>
@@ -156,4 +191,4 @@ const ProjectCard = ({
   );
 };
 
-export default ProjectCard; 
+export default ProjectCard;

@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moreach - Influencer UI (Unified + Chat)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Noto Sans JP', 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        /* Brand Colors */
+        .bg-main { background-color: #FF6F61; }
+        .text-main { color: #FF6F61; }
+        .border-main { border-color: #FF6F61; }
+        .bg-sub-1 { background-color: #F5F2EF; }
+        .text-sub-1 { color: #F5F2EF; }
+        .bg-sub-2 { background-color: #3D4F75; }
+        .text-sub-2 { color: #3D4F75; }
+        .border-sub-2 { border-color: #3D4F75; }
+        .bg-accent { background-color: #F4B95F; }
+        .text-accent { color: #F4B95F; }
+        /* Screen switching */
+        .screen { display: none; }
+        .screen.active { display: block; }
+        /* Bottom nav */
+        .bottom-nav-item.active svg { color: #FF6F61; }
+        .bottom-nav-item.active p { color: #FF6F61; }
+        /* Chat */
+        .chat-item:active { filter: brightness(0.97); }
+    </style>
+</head>
+<body class="bg-gray-800 flex justify-center">
+
+
+    <div class="w-full max-w-sm h-screen bg-sub-1 flex flex-col relative">
+        <main class="flex-1 overflow-y-auto pb-20">
+
+
+
+
+            <!-- PROJECTS -->
+            <div id="projects" class="screen">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                    <h1 class="text-xl font-bold text-center text-sub-2">案件を探す</h1>
+                </header>
+                <div class="p-4 space-y-4">
+                    <div class="relative">
+                        <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-full" placeholder="キーワード (例: 渋谷 カフェ)">
+                        <svg class="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <!-- NEW: 飲食カテゴリの案件カード（例） -->
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3" data-category="food">
+                      <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-sub-2 flex-1 mr-2">【中目黒】炭火焼き鳥「梟」試食レビュー募集</h3>
+                        <span class="text-xs font-bold text-main bg-main/10 px-2 py-1 rounded-full whitespace-nowrap">飲食</span>
+                      </div>
+                      <p class="text-sm text-gray-600">CLIENT: 炭火梟</p>
+                      <p class="text-sm text-gray-600">
+                        報酬: おまかせコース(¥6,000相当)の無償提供 + 来店数に応じた成果報酬
+                      </p>
+                      <div class="text-right pt-2">
+                        <button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">
+                          詳細・応募
+                        </button>
+                      </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-sub-2 flex-1 mr-2">【鎌倉】週末旅に。古民家ゲストハウスの宿泊体験</h3>
+                            <span class="text-xs font-bold text-indigo-500 bg-indigo-100 px-2 py-1 rounded-full whitespace-nowrap">旅行</span>
+                        </div>
+                        <p class="text-sm text-gray-600">CLIENT: 鎌倉Breeze</p>
+                        <p class="text-sm text-gray-600">報酬: 1泊2日宿泊無料 + 予約数に応じた成果報酬</p>
+                        <div class="text-right pt-2"><button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">詳細・応募</button></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-sub-2 flex-1 mr-2">【代官山】秋の新色ネイルモデル募集</h3>
+                            <span class="text-xs font-bold text-pink-500 bg-pink-100 px-2 py-1 rounded-full whitespace-nowrap">美容</span>
+                        </div>
+                        <p class="text-sm text-gray-600">CLIENT: Nail Salon Chic</p>
+                        <p class="text-sm text-gray-600">報酬: 最新デザインのネイル施術(¥12,000相当)無料</p>
+                        <div class="text-right pt-2"><button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">詳細・応募</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ホーム画面 -->
+            <div id="dashboard" class="screen active">
+                <header class="p-4 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10">
+                    <div class="flex items-center space-x-3">
+                        <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/100x100/ADD8E6/FFFFFF?text=健" alt="ユーザーアイコン">
+                        <div>
+                            <p class="font-bold text-sm text-sub-2">渡邉 健斗さん</p>
+                            <p class="text-xs text-gray-500">インフルエンサー</p>
+                        </div>
+                    </div>
+                    <button class="p-2 rounded-full hover:bg-gray-100" aria-label="通知">
+                        <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    </button>
+                </header>
+
+
+                <div class="p-4 space-y-6">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-bold text-sub-2 mb-3">現在の状況</h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-gray-500 text-sm">今月の成果報酬</p>
+                                <p class="text-2xl font-bold text-main">¥15,800</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">進行中の案件</p>
+                                <p class="text-2xl font-bold text-sub-2">3</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <h3 class="font-bold text-lg text-sub-2 mb-3">新しいスカウト</h3>
+                        <div class="bg-white rounded-lg shadow p-4 space-y-3 border-l-4 border-accent">
+                            <h4 class="font-bold text-sub-2">【渋谷】隠れ家イタリアンのPR</h4>
+                            <p class="text-sm text-gray-600">FROM: Trattoria Felice</p>
+                            <p class="text-sm text-gray-600">報酬: ディナーコース(¥8,000相当)無償提供 + 成果報酬</p>
+                            <div class="text-right pt-2">
+                                <button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90" data-screen="chat" data-open-chat="c2">詳細を見る</button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <h3 class="font-bold text-lg text-sub-2 mb-3">進行中の案件</h3>
+                        <div class="bg-white rounded-lg shadow p-4 space-y-3">
+                            <h4 class="font-bold text-sub-2">近所の美味しい韓国料理店の魅力発信</h4>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500">期限: 2025/08/30</span>
+                                <a href="#" class="px-4 py-2 text-sm bg-sub-2 text-white rounded-lg font-bold hover:bg-opacity-90">投稿・成果確認</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 案件管理画面 -->
+            <div id="manage-projects" class="screen">
+              <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                <h1 class="text-xl font-bold text-center text-sub-2">案件管理</h1>
+
+
+                <!-- NEW: 種類タブ -->
+                <div id="mpKindTabs" class="mt-3 grid grid-cols-3 gap-2" role="tablist">
+                  <button class="mp-kind-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white font-bold" data-kind="all">
+                    すべて <span class="mp-kind-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                  <button class="mp-kind-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white" data-kind="apply">
+                    応募中 <span class="mp-kind-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                  <button class="mp-kind-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white" data-kind="scout">
+                    スカウト <span class="mp-kind-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                </div>
+
+
+                <!-- ステータスタブ（3ステータスに統一） -->
+                <div id="mpTabs" class="mt-3 grid grid-cols-3 gap-2" role="tablist">
+                  <button class="mp-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white font-bold" data-tab="not_started">
+                    未開始 <span class="mp-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                  <button class="mp-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white" data-tab="in_progress">
+                    進行中 <span class="mp-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                  <button class="mp-tab px-3 py-2 text-[11px] rounded-full border border-gray-200 bg-white" data-tab="done">
+                    完了 <span class="mp-count ml-1 text-[10px] text-gray-400">0</span>
+                  </button>
+                </div>
+              </header>
+
+
+              <!-- KPIサマリー -->
+              <section class="p-4 grid grid-cols-3 gap-3">
+                <div class="bg-white rounded-lg shadow p-3 text-center">
+                  <p class="text-[11px] text-gray-500">進行中</p>
+                  <p id="mpKpiInProgress" class="text-xl font-bold text-sub-2">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-3 text-center">
+                  <p class="text-[11px] text-gray-500">今月 見込報酬</p>
+                  <p id="mpKpiExpected" class="text-xl font-bold text-main">¥0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-3 text-center">
+                  <p class="text-[11px] text-gray-500">今週 期限</p>
+                  <p id="mpKpiDueThisWeek" class="text-xl font-bold text-sub-2">0</p>
+                </div>
+              </section>
+
+
+              <!-- 一覧 -->
+              <div id="mpList" class="p-4 space-y-3"></div>
+            </div>
+
+
+            <!-- PROFILE -->
+            <div id="profile" class="screen">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                    <h1 class="text-xl font-bold text-center text-sub-2">プロフィール</h1>
+                </header>
+                <div class="p-4 space-y-6">
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3">
+                        <h3 class="font-bold text-sub-2">アカウント情報</h3>
+                        <p class="text-sm">氏名: 渡邉 健斗</p>
+                        <p class="text-sm">得意なカテゴリ: 飲食店, 旅行</p>
+                        <p class="text-sm">連携SNS: @kento_foodie</p>
+                        <div class="text-right pt-2">
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-lg font-bold hover:bg-opacity-90">編集</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3">
+                        <h3 class="font-bold text-sub-2">報酬受取口座</h3>
+                        <p class="text-sm">●●銀行 ●●支店</p>
+                        <p class="text-sm">普通 1234567</p>
+                        <div class="text-right pt-2">
+                            <button class="px-4 py-2 text-sm border border-sub-2 text-sub-2 rounded-lg font-bold hover:bg-gray-50">変更</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- CHAT -->
+            <div id="chat" class="screen">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-20">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-xl font-bold text-sub-2">チャット</h1>
+                        <button id="chatBackBtn" class="hidden p-2 text-sub-2 rounded-lg hover:bg-gray-100">一覧へ</button>
+                    </div>
+                    <!-- Tabs -->
+                    <div id="chatTabs" class="mt-3 grid grid-cols-3 gap-2" role="tablist">
+                        <button class="chat-tab px-3 py-2 text-xs rounded-full border border-gray-200 bg-white font-bold" data-tab="all">すべて</button>
+                        <button class="chat-tab px-3 py-2 text-xs rounded-full border border-gray-200 bg-white" data-tab="active">進行中</button>
+                        <button class="chat-tab px-3 py-2 text-xs rounded-full border border-gray-200 bg-white" data-tab="archived">アーカイブ</button>
+                    </div>
+                </header>
+
+
+                <!-- List -->
+                <div id="chatList" class="p-4 space-y-2"></div>
+
+
+                <!-- Detail -->
+                <div id="chatDetail" class="hidden flex flex-col h-full">
+                    <div class="p-4 bg-white border-b border-gray-100 sticky top-[64px] z-10">
+                        <div class="flex items-center space-x-3">
+                            <img id="chatDetailAvatar" class="h-8 w-8 rounded-full object-cover" src="" alt="avatar">
+                            <div>
+                                <p id="chatDetailName" class="font-bold text-sub-2"></p>
+                                <p id="chatDetailMeta" class="text-xs text-gray-500"></p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div id="chatMessages" class="flex-1 p-4 space-y-3 overflow-y-auto"></div>
+
+
+                    <div class="p-3 bg-white border-t border-gray-200 sticky bottom-0">
+                        <form id="chatForm" class="flex items-center space-x-2">
+                            <input id="chatInput" type="text" class="flex-1 px-3 py-2 border rounded-full text-sm" placeholder="メッセージを入力">
+                            <button class="px-3 py-2 rounded-full bg-main text-white text-sm font-bold">送信</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+
+        <!-- BOTTOM NAV -->
+        <nav class="fixed bottom-0 left-0 right-0 w-full max-w-sm mx-auto bg-white border-t border-gray-200 flex justify-around shadow-top z-20" role="navigation">
+            <!-- ホーム -->
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="dashboard">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <p class="text-xs text-gray-500">ホーム</p>
+            </a>
+
+
+            <!-- NEW: 案件管理 -->
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="manage-projects">
+                <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 7h18M3 12h18M3 17h18" />
+                </svg>
+                <p class="text-xs text-gray-500">案件管理</p>
+            </a>
+
+
+            <!-- 案件を探す -->
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="projects">
+                <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p class="text-xs text-gray-500">案件を探す</p>
+            </a>
+
+
+            <!-- チャット -->
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="chat">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 8h10M7 12h6m-9 8l1.5-3A8.97 8.97 0 013 9a9 9 0 1117.32 4.906L21 20l-3.906-1.68A9 9 0 013 9" />
+                </svg>
+                <p class="text-xs text-gray-500">チャット</p>
+            </a>
+
+
+            <!-- プロフィール -->
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="profile">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <p class="text-xs text-gray-500">プロフィール</p>
+            </a>
+        </nav>
+    </div>
+
+
+    <!-- NEW: 納品モーダル -->
+    <div id="deliverModal" class="fixed inset-0 z-40 hidden">
+      <div class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl p-4 space-y-3 max-w-sm mx-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sub-2">納品</h3>
+          <button id="deliverClose" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">閉じる</button>
+        </div>
+        <form id="deliverForm" class="space-y-3">
+          <input type="hidden" id="deliverProjectId">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">投稿URL（必須）</label>
+            <input id="deliverUrl" type="url" required placeholder="https://..."
+                   class="w-full border rounded-md px-3 py-2 text-sm" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">プラットフォーム</label>
+              <select id="deliverPlatform" class="w-full border rounded-md px-2 py-2 text-sm">
+                <option value="">選択なし</option>
+                <option>Instagram</option>
+                <option>TikTok</option>
+                <option>X</option>
+                <option>YouTube</option>
+                <option>Blog</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">投稿日時</label>
+              <input id="deliverPostedAt" type="datetime-local" class="w-full border rounded-md px-2 py-2 text-sm" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">メモ（任意）</label>
+            <textarea id="deliverNote" rows="2" class="w-full border rounded-md px-3 py-2 text-sm"
+                      placeholder="例）リール20秒/店舗タグ付け済み など"></textarea>
+          </div>
+          <button class="w-full bg-main text-white font-bold rounded-lg py-2">この内容で納品</button>
+        </form>
+      </div>
+    </div>
+
+
+<script>
+// ------------------- State -------------------
+const state = {
+  currentTab: 'all',
+  selectedChatId: null,
+  chats: [
+    {
+      id: 'c1',
+      name: 'ソウルキッチン',
+      avatar: 'https://placehold.co/64x64/FF6F61/FFFFFF?text=SK',
+      status: 'active', // active|archived
+      lastMessage: '9/1の投稿、問題ありません！',
+      lastAt: '2025/08/11 18:32',
+      unread: 1,
+      messages: [
+        { from: 'client', text: '9/1の投稿、問題ありません！', at: '2025/08/11 18:32' },
+        { from: 'me', text: '内容ご確認ありがとうございます。', at: '2025/08/11 18:25' }
+      ]
+    },
+    {
+      id: 'c2',
+      name: 'Trattoria Felice',
+      avatar: 'https://placehold.co/64x64/3D4F75/FFFFFF?text=TF',
+      status: 'active',
+      lastMessage: 'ご応募ありがとうございます！詳細共有します。',
+      lastAt: '2025/08/10 12:03',
+      unread: 2,
+      messages: [
+        { from: 'client', text: 'ご応募ありがとうございます！詳細共有します。', at: '2025/08/10 12:03' },
+        { from: 'me', text: 'こちらのPRに興味があります。', at: '2025/08/10 11:54' }
+      ]
+    },
+    {
+      id: 'c3',
+      name: 'Nail Salon Chic',
+      avatar: 'https://placehold.co/64x64/F4B95F/3D4F75?text=NS',
+      status: 'archived',
+      lastMessage: '今回はここまででクローズにしましょう。',
+      lastAt: '2025/07/29 09:20',
+      unread: 0,
+      messages: [
+        { from: 'client', text: '今回はここまででクローズにしましょう。', at: '2025/07/29 09:20' },
+        { from: 'me', text: '承知しました。また機会があれば！', at: '2025/07/29 09:18' }
+      ]
+    }
+  ],
+  // --- 案件管理データ（3ステータス統一） ---
+  manage: {
+    currentKind: 'all',        // 種類フィルタ  all | apply | scout
+    currentTab: 'not_started', // ステータス   not_started | in_progress | done
+    projects: [
+      {
+        id: 'p1',
+        kind: 'scout', // スカウト由来
+        title: 'ソウルキッチン様：来店促進投稿（8月）',
+        client: 'ソウルキッチン',
+        deadline: '2025/08/30',
+        status: 'in_progress',
+        payout: { base: '試食コース(¥6,000相当)無償提供', model: '来店数×¥200' },
+        metrics: { visits: 32, clicks: 450, reward: 6400 },
+        chatId: 'c1',
+        deliveries: [], // {url, platform, postedAt, note, at}
+        approval: 'none' // none | pending | approved | rejected
+      },
+      {
+        id: 'p2',
+        kind: 'apply', // 応募由来
+        title: 'Trattoria Felice様',
+        client: 'Trattoria Felice',
+        deadline: '2025/08/22',
+        status: 'not_started', // awaiting → not_started に移行
+        payout: { base: 'ディナーコース(¥8,000)無償提供', model: '予約1件×¥500' },
+        metrics: { visits: 0, clicks: 0, reward: 0 },
+        chatId: 'c2',
+        deliveries: [],
+        approval: 'none'
+      },
+      {
+        id: 'p3',
+        kind: 'apply',
+        title: 'Nail Salon Chic様',
+        client: 'Nail Salon Chic',
+        deadline: '2025/09/05',
+        status: 'not_started', // draft → not_started に移行
+        payout: { base: '施術(¥12,000)無償提供', model: '予約1件×¥400' },
+        metrics: { visits: 0, clicks: 0, reward: 0 },
+        chatId: 'c3',
+        deliveries: [],
+        approval: 'none'
+      },
+      {
+        id: 'p4',
+        kind: 'scout',
+        title: '鎌倉Breeze様',
+        client: '鎌倉Breeze',
+        deadline: '2025/08/12',
+        status: 'done',
+        payout: { base: '1泊2日無償', model: '予約1件×¥600' },
+        metrics: { visits: 21, clicks: 310, reward: 7200 },
+        chatId: 'c4',
+        deliveries: [],
+        approval: 'none'
+      }
+    ]
+  }
+};
+
+
+// ------------------- Utilities -------------------
+function $(sel, root=document) { return root.querySelector(sel); }
+function $all(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+
+
+function formatBadge(unread) {
+  if (!unread) return '';
+  return `<span class="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1 text-[10px] font-bold text-white bg-main rounded-full">${unread}</span>`;
+}
+
+
+// --- 案件管理ユーティリティ ---
+function jpy(n){ return '¥' + (n||0).toLocaleString('ja-JP'); }
+function withinThisWeek(dateStr){
+  const d = new Date(dateStr.replaceAll('/', '-'));
+  const now = new Date();
+  const diff = (d - now) / (1000*60*60*24);
+  return diff >= 0 && diff < 7;
+}
+function labelOf(status){
+  return ({ not_started: '未開始', in_progress: '進行中', done: '完了' })[status] || status;
+}
+function badgeCls(status){
+  return ({
+    not_started: 'text-gray-700 bg-gray-100',
+    in_progress: 'text-indigo-700 bg-indigo-100',
+    done: 'text-emerald-700 bg-emerald-100'
+  })[status] || 'text-gray-600 bg-gray-100';
+}
+
+
+// --- 種類タブ用ユーティリティ ---
+function kindLabel(kind){
+  return kind === 'apply' ? '応募' : kind === 'scout' ? 'スカウト' : '';
+}
+function kindBadgeCls(kind){
+  return kind === 'apply' ? 'text-sky-700 bg-sky-100' :
+         kind === 'scout' ? 'text-fuchsia-700 bg-fuchsia-100' : 'text-gray-600 bg-gray-100';
+}
+
+
+// ------------------- Chat List Rendering -------------------
+function renderChatList() {
+  const container = $('#chatList');
+  const { currentTab, chats } = state;
+  const filtered = chats.filter(c => currentTab === 'all' ? true : c.status === currentTab);
+
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="text-center text-gray-500 text-sm py-10">このタブのチャットはありません</div>`;
+    return;
+  }
+
+
+  container.innerHTML = filtered.map(c => `
+    <button class="chat-item w-full bg-white rounded-lg shadow p-3 flex items-center space-x-3" data-chat-id="${c.id}">
+      <img src="${c.avatar}" alt="${c.name}" class="h-10 w-10 rounded-full object-cover" />
+      <div class="flex-1 text-left">
+        <div class="flex items-center space-x-2">
+          <p class="font-bold text-sub-2 truncate max-w-[150px]">${c.name}</p>
+          <p class="text-[10px] text-gray-400">${c.lastAt}</p>
+          ${formatBadge(c.unread)}
+        </div>
+        <p class="text-xs text-gray-500 truncate">${c.lastMessage}</p>
+      </div>
+    </button>
+  `).join('');
+}
+
+
+// ------------------- 案件管理レンダリング（3ステータス統一） -------------------
+function renderManage(){
+  const { currentKind, currentTab, projects } = state.manage;
+
+
+  // --- 種類フィルタ（応募/スカウト） ---
+  const byKind = projects.filter(p => currentKind === 'all' ? true : p.kind === currentKind);
+
+
+  // --- ステータスフィルタ（未開始/進行中/完了） ---
+  const list = byKind.filter(p => currentTab === 'not_started'
+    ? p.status === 'not_started'
+    : currentTab === 'in_progress'
+      ? p.status === 'in_progress'
+      : p.status === 'done'
+  );
+
+
+  // 種別件数（上段）
+  const kindCounts = {
+    all: projects.length,
+    apply: projects.filter(p=>p.kind==='apply').length,
+    scout: projects.filter(p=>p.kind==='scout').length
+  };
+  $all('#mpKindTabs .mp-kind-tab').forEach(btn=>{
+    const key = btn.dataset.kind;
+    const el = btn.querySelector('.mp-kind-count');
+    if (el) el.textContent = kindCounts[key] ?? 0;
+    const active = key === currentKind;
+    btn.classList.toggle('font-bold', active);
+    btn.classList.toggle('border-main', active);
+    btn.classList.toggle('text-main', active);
+  });
+
+
+  // ステータス件数（現在の種類フィルタを適用した母集団で計算）
+  const counts = {
+    not_started: byKind.filter(p=>p.status==='not_started').length,
+    in_progress: byKind.filter(p=>p.status==='in_progress').length,
+    done: byKind.filter(p=>p.status==='done').length
+  };
+  $all('#mpTabs .mp-tab').forEach(tab=>{
+    const key = tab.dataset.tab;
+    const el = tab.querySelector('.mp-count');
+    if (el) el.textContent = counts[key] ?? 0;
+    const active = key === currentTab;
+    tab.classList.toggle('font-bold', active);
+    tab.classList.toggle('border-main', active);
+    tab.classList.toggle('text-main', active);
+  });
+
+
+  // KPI（進行中の見込報酬合計）
+  $('#mpKpiInProgress').textContent = counts.in_progress || 0;
+  const expected = byKind
+    .filter(p=>p.status==='in_progress')
+    .reduce((sum,p)=> sum + (p.metrics?.reward||0), 0);
+  $('#mpKpiExpected').textContent = jpy(expected);
+  const due = byKind.filter(p=>withinThisWeek(p.deadline) && (p.status!=='done')).length;
+  $('#mpKpiDueThisWeek').textContent = due;
+
+
+  // 一覧描画
+  const container = $('#mpList');
+  if (list.length === 0){
+    container.innerHTML = `<div class="text-center text-gray-500 text-sm py-10">この条件の案件はありません</div>`;
+    return;
+  }
+  container.innerHTML = list.map(p => `
+    <div class="bg-white rounded-lg shadow p-4 space-y-2">
+      <div class="flex items-start justify-between">
+        <div class="pr-3">
+          <h3 class="font-bold text-sub-2 leading-snug">${p.title}</h3>
+          <p class="text-xs text-gray-500 mt-1">CLIENT: ${p.client}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <span class="text-[10px] px-2 py-1 rounded-full ${p.kind==='apply' ? 'text-sky-700 bg-sky-100' : 'text-fuchsia-700 bg-fuchsia-100'}">
+            ${p.kind==='apply'?'応募':'スカウト'}
+          </span>
+          <span class="text-[10px] px-2 py-1 rounded-full ${badgeCls(p.status)}">${labelOf(p.status)}</span>
+        </div>
+      </div>
+
+
+      <div class="grid grid-cols-3 gap-2 text-center mt-1">
+        <div>
+          <p class="text-[11px] text-gray-500">期限</p>
+          <p class="text-sm font-bold text-sub-2">${p.deadline}</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-500">報酬</p>
+          <p class="text-sm font-bold text-main">${jpy(p.metrics?.reward)}</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-500">来店/クリック(人)</p>
+          <p class="text-sm font-bold text-sub-2">${p.metrics?.visits||0} / ${p.metrics?.clicks||0}</p>
+        </div>
+      </div>
+
+
+      <div class="space-y-1">
+        <div class="text-[11px] text-gray-500">
+          無償提供: <span class="text-gray-800">${p.payout.base}</span>
+        </div>
+        <div class="text-[11px] text-gray-500">
+          成果: <span class="text-gray-800">${p.payout.model}</span>
+        </div>
+      </div>
+
+
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-gray-500">ステータス</label>
+        <select class="mp-status border rounded-md text-xs px-2 py-1" data-id="${p.id}">
+          <option value="not_started" ${p.status==='not_started'?'selected':''}>未開始</option>
+          <option value="in_progress" ${p.status==='in_progress'?'selected':''}>進行中</option>
+          <option value="done" ${p.status==='done'?'selected':''}>完了</option>
+        </select>
+
+
+        <div class="ml-auto flex items-center gap-2">
+          <button class="mp-open-chat px-3 py-1.5 rounded-full border border-sub-2 text-sub-2 text-xs font-bold hover:bg-gray-50"
+                  data-open-chat="${p.chatId||''}">チャット</button>
+          <button class="mp-deliver px-3 py-1.5 rounded-full bg-accent text-white text-xs font-bold hover:bg-opacity-90"
+                  data-id="${p.id}">納品</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// タブ切替
+function activateManageTab(tab){
+  state.manage.currentTab = tab;
+  renderManage();
+}
+
+
+// 種類タブ切替
+function activateManageKind(kind){
+  state.manage.currentKind = kind;
+  renderManage();
+}
+
+
+// ------------------- 納品モーダル機能 -------------------
+function openDeliverModal(projectId){
+  $('#deliverProjectId').value = projectId;
+  $('#deliverUrl').value = '';
+  $('#deliverPlatform').value = '';
+  $('#deliverPostedAt').value = '';
+  $('#deliverNote').value = '';
+  $('#deliverModal').classList.remove('hidden');
+}
+
+
+function closeDeliverModal(){
+  $('#deliverModal').classList.add('hidden');
+}
+
+
+function appendDeliveryToChat(project, payload){
+  // 納品メッセージ（チャットへ自動投稿）
+  const chat = state.chats?.find(c => c.id === project.chatId);
+  if (!chat) return;
+
+
+  const now = new Date().toLocaleString('ja-JP', { hour12: false });
+  const lines = [
+    '🔔 納品が提出されました。',
+    `URL: ${payload.url}`,
+    payload.platform ? `プラットフォーム: ${payload.platform}` : '',
+    payload.postedAt ? `投稿日時: ${payload.postedAt}` : '',
+    payload.note ? `メモ: ${payload.note}` : '',
+    '',
+    // 承認/差し戻し（デモ用の擬似ボタン）
+    '《承認 or 差し戻しを選択してください》'
+  ].filter(Boolean).join('\n');
+
+
+  // 納品はシステム通知扱いで "me" から送る（運用に合わせて変更可）
+  chat.messages.push({ from: 'me', text: lines, at: now, kind: 'delivery_notice' });
+
+
+  // 企業側アクション用に擬似ボタンを表現（クリックを委譲で拾う）
+  chat.messages.push({
+    from: 'client',
+    text: `[承認する]  [差し戻す]`,
+    at: now,
+    kind: 'approval_actions',
+    meta: { projectId: project.id }
+  });
+
+
+  chat.lastMessage = '納品を提出しました。承認待ちです。';
+  chat.lastAt = now;
+}
+
+
+function handleDeliverSubmit(e){
+  e.preventDefault();
+  const projectId = $('#deliverProjectId').value;
+  const url = $('#deliverUrl').value.trim();
+  if (!url) return;
+
+
+  const payload = {
+    url,
+    platform: $('#deliverPlatform').value,
+    postedAt: $('#deliverPostedAt').value,
+    note: $('#deliverNote').value,
+    at: new Date().toISOString()
+  };
+  const proj = state.manage.projects.find(p => p.id === projectId);
+  if (!proj) return;
+
+
+  // 保存
+  proj.deliveries.push(payload);
+  proj.approval = 'pending';
+
+
+  // チャットへ自動通知
+  appendDeliveryToChat(proj, payload);
+
+
+  // ステータスは任意：未開始→進行中 には自動でしておくと混乱が少ない
+  if (proj.status === 'not_started') proj.status = 'in_progress';
+
+
+  renderManage();
+  closeDeliverModal();
+
+
+  // 納品後すぐチャットへ遷移して確認したい場合は以下を有効に
+  showScreen('chat');
+  if (typeof openChatDetail === 'function') setTimeout(()=> openChatDetail(proj.chatId), 0);
+}
+
+
+// ------------------- Chat Detail Rendering -------------------
+function openChatDetail(chatId) {
+  state.selectedChatId = chatId;
+  const chat = state.chats.find(c => c.id === chatId);
+  if (!chat) return;
+
+
+  // Header
+  $('#chatDetailAvatar').src = chat.avatar;
+  $('#chatDetailAvatar').alt = chat.name;
+  $('#chatDetailName').textContent = chat.name;
+  $('#chatDetailMeta').textContent = chat.lastAt + ' 更新';
+
+
+  // Messages
+  const box = $('#chatMessages');
+  box.innerHTML = chat.messages.map(m => {
+    const isMe = m.from === 'me';
+    return `
+      <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow ${isMe ? 'bg-main text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm'}">
+          <p>${m.text}</p>
+          <p class="text-[10px] mt-1 ${isMe ? 'text-white/80' : 'text-gray-400'}">${m.at}</p>
+        </div>
+      </div>`;
+  }).join('');
+
+
+  // Reset unread
+  chat.unread = 0;
+  renderChatList();
+
+
+  // Toggle views
+  $('#chatList').classList.add('hidden');
+  $('#chatDetail').classList.remove('hidden');
+  $('#chatBackBtn').classList.remove('hidden');
+
+
+  // Scroll to bottom
+  const msgPane = $('#chatMessages');
+  msgPane.scrollTop = msgPane.scrollHeight;
+}
+
+
+function backToChatList() {
+  state.selectedChatId = null;
+  $('#chatDetail').classList.add('hidden');
+  $('#chatList').classList.remove('hidden');
+  $('#chatBackBtn').classList.add('hidden');
+}
+
+
+// ------------------- Tabs -------------------
+function activateTab(tab) {
+  state.currentTab = tab;
+  $all('.chat-tab').forEach(btn => {
+    const active = btn.dataset.tab === tab;
+    btn.classList.toggle('font-bold', active);
+    btn.classList.toggle('border-main', active);
+    btn.classList.toggle('text-main', active);
+  });
+  renderChatList();
+}
+
+
+// ------------------- App Shell -------------------
+document.addEventListener('DOMContentLoaded', function() {
+  const screens = document.querySelectorAll('.screen');
+  const navItems = document.querySelectorAll('.bottom-nav-item');
+
+
+  // Screen switcher
+  function showScreen(screenId) {
+    screens.forEach(screen => screen.classList.remove('active'));
+    const activeScreen = document.getElementById(screenId);
+    if (activeScreen) activeScreen.classList.add('active');
+
+
+    navItems.forEach(item => item.classList.remove('active'));
+    const activeNavItem = document.querySelector(`.bottom-nav-item[data-screen="${screenId}"]`);
+    if (activeNavItem) activeNavItem.classList.add('active');
+
+
+    const mainScroller = document.querySelector('main');
+    if (mainScroller) mainScroller.scrollTop = 0;
+
+
+    // When entering chat, ensure list view and tabs are fresh
+    if (screenId === 'chat') {
+      backToChatList();
+      activateTab(state.currentTab);
+    }
+  }
+
+
+  // Expose for deep-link buttons (e.g., dashboard "詳細を見る")
+  window.showScreen = showScreen;
+
+
+  // Bottom nav events
+  navItems.forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      const screenId = this.dataset.screen;
+      showScreen(screenId);
+    });
+  });
+
+
+  // Deep link open chat button in dashboard
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-open-chat]');
+    if (btn) {
+      const chatId = btn.getAttribute('data-open-chat');
+      showScreen('chat');
+      // wait a tick to ensure chat view is ready
+      setTimeout(() => openChatDetail(chatId), 0);
+    }
+  });
+
+
+  // Chat tabs
+  $all('.chat-tab').forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+
+
+  // Chat list click (event delegation)
+  $('#chat').addEventListener('click', (e) => {
+    const item = e.target.closest('.chat-item');
+    if (item) {
+      openChatDetail(item.dataset.chatId);
+    }
+  });
+
+
+  // Back from detail
+  $('#chatBackBtn').addEventListener('click', backToChatList);
+
+
+  // Send message (demo only)
+  $('#chatForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = $('#chatInput');
+    const txt = input.value.trim();
+    if (!txt || !state.selectedChatId) return;
+    const chat = state.chats.find(c => c.id === state.selectedChatId);
+    chat.messages.push({ from: 'me', text: txt, at: new Date().toLocaleString('ja-JP', { hour12: false }) });
+    chat.lastMessage = txt;
+    chat.lastAt = new Date().toLocaleString('ja-JP', { hour12: false });
+    input.value = '';
+    openChatDetail(chat.id);
+  });
+
+
+  // --- 案件管理：初期化 ---
+  function initManage(){
+    // NEW: 種類タブイベント
+    $all('#mpKindTabs .mp-kind-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=> activateManageKind(btn.dataset.kind));
+    });
+
+
+    // 既存: ステータスタブイベント
+    $all('#mpTabs .mp-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=> activateManageTab(btn.dataset.tab));
+    });
+
+
+    // ステータス変更（委譲）
+    const list = $('#mpList');
+    list.addEventListener('change', (e)=>{
+      const sel = e.target.closest('.mp-status');
+      if (!sel) return;
+      const id = sel.dataset.id;
+      const proj = state.manage.projects.find(p=>p.id===id);
+      if (proj){
+        proj.status = sel.value;
+        renderManage();
+      }
+    });
+
+
+    // チャットへ（委譲）
+    list.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.mp-open-chat');
+      if (!btn) return;
+      const chatId = btn.getAttribute('data-open-chat');
+      if (chatId){
+        showScreen('chat');
+        // 既存のチャット詳細オープン関数がある場合：
+        if (typeof openChatDetail === 'function') {
+          setTimeout(()=> openChatDetail(chatId), 0);
+        }
+      }
+    });
+
+
+    // 納品モーダル開閉
+    $('#deliverClose').addEventListener('click', closeDeliverModal);
+    $('#deliverForm').addEventListener('submit', handleDeliverSubmit);
+
+
+    // 案件カード：納品ボタン（委譲）
+    list.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.mp-deliver');
+      if (!btn) return;
+      openDeliverModal(btn.getAttribute('data-id'));
+    });
+
+
+    // 初期描画
+    renderManage();
+  }
+
+
+  // --- 画面遷移時のフックに追加 ---
+  const _origShowScreen = showScreen;
+  showScreen = function(screenId){
+    _origShowScreen(screenId);
+    if (screenId === 'manage-projects') initManage();
+  };
+
+
+  // チャット内の「承認」「差し戻し」（デモ用）を拾う
+  $('#chat').addEventListener('click', (e)=>{
+    const targetText = e.target?.textContent?.trim();
+
+
+    if (targetText === '[承認する]' || targetText === '[差し戻す]') {
+      // 直近メッセージから projectId を特定（簡易実装）
+      // 実装方法：approval_actions メッセージの meta.projectId を参照
+      const chatId = state.selectedChatId;
+      const chat = state.chats?.find(c => c.id === chatId);
+      if (!chat) return;
+
+
+      const actionMsg = [...chat.messages].reverse().find(m => m.kind === 'approval_actions' && m.meta?.projectId);
+      if (!actionMsg) return;
+
+
+      const projectId = actionMsg.meta.projectId;
+      const proj = state.manage.projects.find(p => p.id === projectId);
+      if (!proj) return;
+
+
+      const now = new Date().toLocaleString('ja-JP', { hour12: false });
+
+
+      if (targetText === '[承認する]') {
+        proj.approval = 'approved';
+        proj.status = 'done'; // 承認＝完了へ
+        chat.messages.push({ from: 'client', text: '✅ 承認しました。おつかれさまでした！', at: now });
+        chat.lastMessage = '承認されました。';
+      } else {
+        proj.approval = 'rejected';
+        // 差し戻し時は進行中のまま（指示に応じて変更OK）
+        if (proj.status === 'done') proj.status = 'in_progress';
+        chat.messages.push({ from: 'client', text: '↩️ 差し戻します。修正をお願いします。', at: now });
+        chat.lastMessage = '差し戻しされました。';
+      }
+      chat.lastAt = now;
+
+
+      renderManage();
+      openChatDetail(chatId); // 画面を即更新
+    }
+  });
+
+
+  // ------------------- Initial screen -------------------
+  showScreen('dashboard');
+});
+</script>
+</body>
+</html>

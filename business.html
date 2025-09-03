@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moreach - スマホモックアップ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* カスタムカラー（ブランドカラー） */
+        .bg-main { background-color: #FF6F61; }
+        .text-main { color: #FF6F61; }
+        .border-main { border-color: #FF6F61; }
+        .bg-sub-1 { background-color: #F5F2EF; }
+        .text-sub-1 { color: #F5F2EF; }
+        .bg-sub-2 { background-color: #3D4F75; }
+        .text-sub-2 { color: #3D4F75; }
+        .border-sub-2 { border-color: #3D4F75; }
+        .bg-accent { background-color: #F4B95F; }
+        .text-accent { color: #F4B95F; }
+
+        /* 画面切り替え */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* ボトムナビのアクティブ状態 */
+        .bottom-nav-item.active svg { color: #FF6F61; }
+        .bottom-nav-item.active p { color: #FF6F61; }
+
+        /* 案件管理タブ */
+        .project-tab.active {
+            border-bottom-color: #FF6F61;
+            color: #FF6F61;
+            font-weight: bold;
+        }
+
+        /* トースト */
+        .toast {
+            position: fixed;
+            bottom: 96px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111827;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            z-index: 50;
+            display: none;
+        }
+        .toast.show { display: inline-block; }
+    </style>
+</head>
+<body class="bg-gray-800 flex justify-center">
+
+    <!-- スマホ画面のコンテナ -->
+    <div class="w-full max-w-sm h-screen bg-sub-1 flex flex-col relative">
+
+        <!-- トースト -->
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+        <!-- メインコンテンツエリア -->
+        <main class="flex-1 overflow-y-auto pb-20">
+            <!-- ダッシュボード画面 -->
+            <div id="dashboard" class="screen active" aria-labelledby="dashboard-title">
+                <!-- ヘッダー -->
+                <header class="p-4 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10">
+                    <div class="flex items-center space-x-3">
+                        <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/100x100/F4B95F/3D4F75?text=店" alt="店舗ロゴ">
+                        <div>
+                            <p class="font-bold text-sm text-sub-2">K's Cafe 板橋店</p>
+                            <p class="text-xs text-gray-500">事業者アカウント</p>
+                        </div>
+                    </div>
+                    <button class="p-2 rounded-full hover:bg-gray-100" aria-label="通知">
+                        <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    </button>
+                </header>
+
+                <div class="p-4 space-y-6">
+                    <!-- アクションボタン -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="btnCreateFromDashboard" class="bg-main text-white font-bold py-4 rounded-lg shadow hover:bg-opacity-90 flex items-center justify-center space-x-2" aria-label="案件を作成する">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>案件作成</span>
+                        </button>
+                        <button class="bg-sub-2 text-white font-bold py-4 rounded-lg shadow hover:bg-opacity-90 flex items-center justify-center space-x-2" data-screen="influencer-search" aria-label="インフルエンサーを探す">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <span>探す</span>
+                        </button>
+                    </div>
+
+                    <!-- サマリー -->
+                    <div class="bg-white p-4 rounded-lg shadow" aria-labelledby="summary-title">
+                        <h3 id="summary-title" class="font-bold text-sub-2 mb-3">現在の状況</h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-gray-500 text-sm">進行中の案件</p>
+                                <p id="stat-active-projects" class="text-2xl font-bold text-sub-2">3</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">今月の成果</p>
+                                <p class="text-2xl font-bold text-main">48<span class="text-base ml-1">人</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成果グラフ -->
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-bold text-lg text-sub-2 mb-2">成果トラッキング</h3>
+                        <canvas id="analyticsChartMobile"></canvas>
+                    </div>
+
+                    <!-- 進行中の案件リスト（ダミー） -->
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-bold text-lg text-sub-2 mb-3">進行中の案件</h3>
+                        <div class="space-y-3" id="dashboard-projects-list">
+                            <div class="p-3 border rounded-lg">
+                                <p class="font-bold text-sm">夏の新メニューPR</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div class="flex -space-x-2">
+                                        <img class="h-8 w-8 rounded-full object-cover border-2 border-white" src="https://placehold.co/80x80/FFC0CB/000000?text=A" alt="A">
+                                        <img class="h-8 w-8 rounded-full object-cover border-2 border-white" src="https://placehold.co/80x80/ADD8E6/000000?text=B" alt="B">
+                                    </div>
+                                    <span class="text-xs text-gray-500">+2名と進行中</span>
+                                    <a href="#" class="px-3 py-1 text-xs bg-main text-white rounded-full">詳細</a>
+                                </div>
+                            </div>
+                            <!-- 追加分はJSで挿入 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 案件管理画面 -->
+            <div id="projects" class="screen" aria-labelledby="projects-title">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                    <h1 id="projects-title" class="text-xl font-bold text-center text-sub-2">案件管理</h1>
+                </header>
+                <!-- 案件ステータスフィルター -->
+                <div class="bg-white sticky top-[72px] z-10">
+                    <div class="flex justify-around border-b">
+                        <button class="project-tab flex-1 py-3 text-sm text-gray-500 border-b-2 border-transparent active" data-filter="all">すべて <span id="badge-all" class="ml-1 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">8</span></button>
+                        <button class="project-tab flex-1 py-3 text-sm text-gray-500 border-b-2 border-transparent" data-filter="募集中">募集中 <span id="badge-open" class="ml-1 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">2</span></button>
+                        <button class="project-tab flex-1 py-3 text-sm text-gray-500 border-b-2 border-transparent" data-filter="調整中">調整中 <span id="badge-negotiating" class="ml-1 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">3</span></button>
+                        <button class="project-tab flex-1 py-3 text-sm text-gray-500 border-b-2 border-transparent" data-filter="完了">完了 <span id="badge-done" class="ml-1 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">3</span></button>
+                        <button class="project-tab flex-1 py-3 text-sm text-gray-500 border-b-2 border-transparent" data-filter="下書き">下書き <span id="badge-draft" class="ml-1 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">0</span></button>
+                    </div>
+                </div>
+                <div id="projects-list" class="p-4 space-y-4">
+                    <!-- 既存の案件カード（省略せず残す） -->
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3" data-status="募集中">
+                                            <div class="flex items-start">
+                      <!-- タイトルは可変幅＆折り返し -->
+                      <div class="flex-1 min-w-0 mr-2">
+                        <h3 class="font-bold text-sub-2 break-words">
+                          夏の新メニュー「情熱のマンゴーパフェ」PR
+                        </h3>
+                      </div>
+                      <!-- バッジは固定幅・改行禁止 -->
+                      <span class="text-xs font-bold text-yellow-500 bg-yellow-100 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                        募集中
+                      </span>
+                    </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div><p class="text-xs text-gray-500">応募</p><p class="font-bold text-lg text-sub-2">15</p></div>
+                            <div><p class="text-xs text-gray-500">採用</p><p class="font-bold text-lg text-sub-2">3 / <span class="text-sm">5</span></p></div>
+                            <div><p class="text-xs text-gray-500">成果(来店)</p><p class="font-bold text-lg text-main">28</p></div>
+                        </div>
+                        <div class="text-right"><button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">詳細を見る</button></div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3" data-status="調整中">
+                                            <div class="flex items-start">
+                      <!-- タイトルは可変幅＆折り返し -->
+                      <div class="flex-1 min-w-0 mr-2">
+                        <h3 class="font-bold text-sub-2 break-words">
+                          平日限定ランチセットの認知度向上
+                        </h3>
+                      </div>
+                      <!-- バッジは固定幅・改行禁止 -->
+                      <span class="text-xs font-bold text-blue-500 bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                        調整中
+                      </span>
+                    </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div><p class="text-xs text-gray-500">応募</p><p class="font-bold text-lg text-sub-2">8</p></div>
+                            <div><p class="text-xs text-gray-500">採用</p><p class="font-bold text-lg text-sub-2">2 / <span class="text-sm">2</span></p></div>
+                            <div><p class="text-xs text-gray-500">成果(来店)</p><p class="font-bold text-lg text-main">12</p></div>
+                        </div>
+                        <div class="text-right"><button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">詳細を見る</button></div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-4 space-y-3" data-status="完了">
+                                            <div class="flex items-start">
+                      <!-- タイトルは可変幅＆折り返し -->
+                      <div class="flex-1 min-w-0 mr-2">
+                        <h3 class="font-bold text-sub-2 break-words">
+                          オープン1周年記念キャンペーン
+                        </h3>
+                      </div>
+                      <!-- バッジは固定幅・改行禁止 -->
+                      <span class="text-xs font-bold text-green-500 bg-green-100 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                        完了
+                      </span>
+                    </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div><p class="text-xs text-gray-500">応募</p><p class="font-bold text-lg text-sub-2">25</p></div>
+                            <div><p class="text-xs text-gray-500">採用</p><p class="font-bold text-lg text-sub-2">5 / <span class="text-sm">5</span></p></div>
+                            <div><p class="text-xs text-gray-500">成果(来店)</p><p class="font-bold text-lg text-main">76</p></div>
+                        </div>
+                        <div class="text-right"><button class="px-4 py-2 text-sm bg-main text-white rounded-lg font-bold hover:bg-opacity-90">詳細を見る</button></div>
+                    </div>
+                    <!-- 新規作成分はJSで先頭に追加 -->
+                </div>
+            </div>
+
+            <!-- インフルエンサー検索画面 -->
+            <div id="influencer-search" class="screen" aria-labelledby="search-title">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                    <h1 id="search-title" class="text-xl font-bold text-center text-sub-2">インフルエンサーを探す</h1>
+                </header>
+                <div class="p-4 space-y-4">
+                    <div class="relative">
+                        <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-full" placeholder="キーワードで検索" aria-label="キーワード検索">
+                        <svg class="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div class="text-right">
+                        <button class="text-main font-bold text-sm">絞り込み</button>
+                    </div>
+                    <div class="space-y-4">
+                        <!-- インフルエンサーカード（ダミー） -->
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/FFC0CB/000000?text=A" alt="A">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">グルメ探検隊A</p>
+                                <p class="text-xs text-gray-500">フォロワー: 1.5万</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 65%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/ADD8E6/000000?text=B" alt="B">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">カフェ巡りB</p>
+                                <p class="text-xs text-gray-500">フォロワー: 8,700</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 88%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/FFD700/000000?text=C" alt="C">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">スイーツ女子C</p>
+                                <p class="text-xs text-gray-500">フォロワー: 1.2万</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 85%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/90EE90/000000?text=D" alt="D">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">旅するカフェD</p>
+                                <p class="text-xs text-gray-500">フォロワー: 9,800</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 80%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/FFA07A/000000?text=E" alt="E">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">おうちごはんE</p>
+                                <p class="text-xs text-gray-500">フォロワー: 7,500</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 50%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/AFEEEE/000000?text=F" alt="F">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">街角スナップF</p>
+                                <p class="text-xs text-gray-500">フォロワー: 6,300</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 70%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/FF69B4/000000?text=G" alt="G">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">グルメ日記G</p>
+                                <p class="text-xs text-gray-500">フォロワー: 2.1万</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 94%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/BA55D3/000000?text=H" alt="H">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">ランチ研究所H</p>
+                                <p class="text-xs text-gray-500">フォロワー: 5,400</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 87%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/FFDAB9/000000?text=I" alt="I">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">お散歩カフェI</p>
+                                <p class="text-xs text-gray-500">フォロワー: 1.8万</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 90%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+                        <div class="bg-white rounded-lg shadow flex items-center p-3 space-x-4">
+                            <img class="w-16 h-16 rounded-full object-cover" src="https://placehold.co/120x120/87CEEB/000000?text=J" alt="J">
+                            <div class="flex-1">
+                                <p class="font-bold text-sub-2">カフェ旅人J</p>
+                                <p class="text-xs text-gray-500">フォロワー: 9,200</p>
+                                <p class="text-xs font-bold text-green-600">マッチ度: 86%</p>
+                            </div>
+                            <button class="px-4 py-2 text-sm bg-sub-2 text-white rounded-full font-bold">スカウト</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- チャット画面 -->
+            <div id="chat" class="screen" aria-labelledby="chat-title">
+              <!-- ===== リスト表示（初期表示） ===== -->
+              <div id="chat-list-view" class="flex flex-col h-full">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                  <h1 id="chat-title" class="text-xl font-bold text-center text-sub-2">チャット</h1>
+                </header>
+
+                <div class="p-3 bg-white sticky top-[64px] z-10 border-b">
+                  <div class="relative">
+                    <input id="chatSearch" type="text" placeholder="名前・案件で検索"
+                           class="w-full pl-10 pr-4 py-2 border rounded-full text-sm">
+                    <svg class="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- 会話一覧 -->
+                <ul id="chatList" class="flex-1 overflow-y-auto divide-y">
+                  <!-- JSで描画 -->
+                </ul>
+              </div>
+
+              <!-- ===== 詳細表示（個別スレッド） ===== -->
+              <div id="chat-detail-view" class="hidden flex flex-col h-full">
+                <!-- ヘッダー -->
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10 flex items-center">
+                  <button id="chatBack" class="mr-2 p-2 rounded-full hover:bg-gray-100" aria-label="戻る">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </button>
+                  <div class="flex items-center space-x-3">
+                    <img id="chatAvatar" src="" class="w-10 h-10 rounded-full object-cover" alt="相手">
+                    <div>
+                      <p id="chatName" class="font-bold text-sub-2 text-sm">インフルエンサー名</p>
+                      <p id="chatSubtitle" class="text-xs text-gray-500">案件タイトルなど補足</p>
+                    </div>
+                  </div>
+                </header>
+
+                <!-- メッセージ表示エリア -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-sub-1">
+                  <!-- JSで描画 -->
+                </div>
+
+                <!-- メッセージ入力エリア -->
+                <div class="p-3 bg-white border-t flex items-center space-x-2 sticky bottom-0">
+                  <input id="chatInput" type="text" placeholder="メッセージを入力" class="flex-1 border rounded-full px-4 py-2 text-sm">
+                  <button id="chatSend" class="bg-main text-white p-2 rounded-full hover:bg-opacity-90" aria-label="送信">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- マイページ画面 -->
+            <div id="mypage" class="screen" aria-labelledby="mypage-title">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10">
+                    <h1 id="mypage-title" class="text-xl font-bold text-center text-sub-2">マイページ</h1>
+                </header>
+                <div class="p-4">
+                    <p class="text-center text-gray-500">マイページ画面（作成中）</p>
+                </div>
+            </div>
+
+            <!-- 案件作成画面（新規追加） -->
+            <div id="project-create" class="screen" aria-labelledby="create-title">
+                <header class="p-4 bg-white shadow-sm sticky top-0 z-10 flex items-center">
+                    <button id="btnCreateBack" class="mr-2 p-2 rounded hover:bg-gray-100" aria-label="戻る">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <h1 id="create-title" class="text-xl font-bold text-sub-2 flex-1 text-center">案件を作成</h1>
+                    <div class="w-6"></div>
+                </header>
+
+                <form id="projectForm" class="p-4 space-y-4">
+                    <!-- タイトル -->
+                    <div>
+                        <label for="title" class="block text-sm font-bold text-sub-2 mb-1">案件タイトル *</label>
+                        <input id="title" name="title" type="text" required maxlength="60" class="w-full border rounded-lg px-3 py-2" placeholder="例）夏の新メニューPR">
+                        <p class="text-xs text-gray-500 mt-1">60文字以内</p>
+                    </div>
+
+                    <!-- 媒体 / 募集枠 / 期間 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="media" class="block text-sm font-bold text-sub-2 mb-1">投稿媒体 *</label>
+                            <select id="media" name="media" required class="w-full border rounded-lg px-3 py-2">
+                                <option value="">選択してください</option>
+                                <option>Instagram</option>
+                                <option>TikTok</option>
+                                <option>X（旧Twitter）</option>
+                                <option>YouTube</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="quota" class="block text-sm font-bold text-sub-2 mb-1">募集枠数 *</label>
+                            <input id="quota" name="quota" type="number" min="1" max="50" required class="w-full border rounded-lg px-3 py-2" placeholder="例）5">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="startDate" class="block text-sm font-bold text-sub-2 mb-1">開始日 *</label>
+                            <input id="startDate" name="startDate" type="date" required class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-bold text-sub-2 mb-1">終了日 *</label>
+                            <input id="endDate" name="endDate" type="date" required class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+
+                    <!-- 報酬設定 -->
+                    <fieldset class="border rounded-lg p-3">
+                        <legend class="text-sm font-bold text-sub-2 px-1">報酬設定 *</legend>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="compFree" class="rounded">
+                                <span>無償提供（商品・サービス）</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="payType" class="block text-sm font-bold text-sub-2 mb-1">成果報酬タイプ</label>
+                                    <select id="payType" class="w-full border rounded-lg px-3 py-2">
+                                        <option>来店1人あたり</option>
+                                        <option>予約1件あたり</option>
+                                        <option>売上％</option>
+                                        <option>固定（1投稿あたり）</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="payValue" class="block text-sm font-bold text-sub-2 mb-1">報酬値</label>
+                                    <input id="payValue" type="number" min="0" step="1" class="w-full border rounded-lg px-3 py-2" placeholder="例）500">
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500">例：無償提供＋来店500円など柔軟に設定可</p>
+                        </div>
+                    </fieldset>
+
+                    <!-- 募集方法 -->
+                    <div>
+                        <label class="block text-sm font-bold text-sub-2 mb-1">募集方法 *</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="border rounded-lg px-3 py-2 flex items-center justify-between">
+                                <span>公募</span>
+                                <input type="radio" name="method" value="公募" required>
+                            </label>
+                            <label class="border rounded-lg px-3 py-2 flex items-center justify-between">
+                                <span>スカウト</span>
+                                <input type="radio" name="method" value="スカウト" required>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 説明 -->
+                    <div>
+                        <label for="desc" class="block text-sm font-bold text-sub-2 mb-1">募集概要 *</label>
+                        <textarea id="desc" name="desc" rows="4" required class="w-full border rounded-lg px-3 py-2" placeholder="目的／期待する投稿イメージ／条件など"></textarea>
+                    </div>
+
+                    <!-- アクション -->
+                    <div class="flex items-center justify-between pt-2">
+                        <button type="button" id="btnSaveDraft" class="px-4 py-2 text-sm font-bold rounded-lg border">下書き保存</button>
+                        <div class="space-x-2">
+                            <button type="button" id="btnCancelCreate" class="px-4 py-2 text-sm font-bold rounded-lg border">キャンセル</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-bold rounded-lg bg-main text-white">公開して募集</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <!-- ===== インフルエンサー詳細画面（新規追加） ===== -->
+        <div id="influencer-detail" class="screen bg-sub-1" aria-labelledby="inf-title">
+          <header class="p-4 bg-white shadow-sm sticky top-0 z-10 flex items-center">
+            <button id="infBack" class="mr-2 p-2 rounded hover:bg-gray-100" aria-label="戻る">
+              <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h1 id="inf-title" class="text-xl font-bold text-sub-2 flex-1 truncate">インフルエンサー詳細</h1>
+            <span id="inf-match-badge" class="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-600">—%</span>
+          </header>
+
+          <div class="p-4 space-y-4 pb-28">
+            <!-- サマリー -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <div class="flex items-center gap-3">
+                <img id="inf-avatar" class="w-14 h-14 rounded-full object-cover" src="" alt="">
+                <div class="min-w-0">
+                  <p id="inf-name" class="font-bold text-sub-2 text-lg truncate">—</p>
+                  <div id="inf-platforms" class="flex flex-wrap gap-1 mt-1">
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">Instagram</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">TikTok</span>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-center mt-4">
+                <div><p class="text-xs text-gray-500">フォロワー</p><p id="inf-followers" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">平均いいね</p><p id="inf-likes" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">ER(概算)</p><p id="inf-er" class="text-xl font-bold text-sub-2">—%</p></div>
+              </div>
+            </section>
+
+            <!-- オーディエンス -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-3">オーディエンス</h2>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">年齢層</p>
+                  <canvas id="infChartAge" height="140"></canvas>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">性別</p>
+                  <canvas id="infChartGender" height="140"></canvas>
+                </div>
+              </div>
+              <p class="mt-2 text-xs text-gray-500">※ 概算のデモデータです。</p>
+            </section>
+
+            <!-- 最近の投稿（ダミー） -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-3">最近の投稿</h2>
+              <div id="inf-posts" class="grid grid-cols-3 gap-2">
+                <!-- JSで挿入（正方形サムネ） -->
+              </div>
+            </section>
+
+            <!-- アクション -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-gray-500">現在の案件</p>
+                  <p id="inf-current-project" class="font-bold text-sub-2">未選択</p>
+                </div>
+                <button id="infScoutBtn" class="px-4 py-2 bg-main text-white rounded-lg font-bold">この人をスカウト</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- ===== 案件詳細画面（新規追加） ===== -->
+        <div id="project-detail" class="screen bg-sub-1" aria-labelledby="project-detail-title">
+          <header class="p-4 bg-white shadow-sm sticky top-0 z-10 flex items-center">
+            <button id="projectDetailBack" class="mr-2 p-2 rounded hover:bg-gray-100" aria-label="戻る">
+              <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 id="project-detail-title" class="text-xl font-bold text-sub-2 flex-1 truncate">案件詳細</h1>
+            <span id="project-detail-status" class="text-xs font-bold px-2 py-1 rounded-full border-sub-2 border text-sub-2"></span>
+          </header>
+
+          <div class="p-4 space-y-4 pb-28">
+            <!-- 概要 -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-3">概要</h2>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><span class="text-gray-500">媒体</span><p id="pd-media" class="font-bold text-sub-2 mt-0.5">—</p></div>
+                <div><span class="text-gray-500">募集枠</span><p id="pd-quota" class="font-bold text-sub-2 mt-0.5">—</p></div>
+                <div><span class="text-gray-500">募集方法</span><p id="pd-method" class="font-bold text-sub-2 mt-0.5">—</p></div>
+                <div><span class="text-gray-500">期間</span><p id="pd-period" class="font-bold text-sub-2 mt-0.5">—</p></div>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-sm mt-3">
+                <div><span class="text-gray-500">無償提供</span><p id="pd-comp" class="font-bold text-sub-2 mt-0.5">—</p></div>
+                <div><span class="text-gray-500">成果報酬タイプ</span><p id="pd-paytype" class="font-bold text-sub-2 mt-0.5">—</p></div>
+                <div><span class="text-gray-500">報酬値</span><p id="pd-payval" class="font-bold text-sub-2 mt-0.5">—</p></div>
+              </div>
+            </section>
+
+            <!-- KPI -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-3">KPI</h2>
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div><p class="text-xs text-gray-500">応募</p><p id="pd-applicants" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">採用</p><p id="pd-hired" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">来店</p><p id="pd-visits" class="text-xl font-bold text-main">—</p></div>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-center mt-3">
+                <div><p class="text-xs text-gray-500">予約</p><p id="pd-bookings" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">売上</p><p id="pd-revenue" class="text-xl font-bold text-sub-2">—</p></div>
+                <div><p class="text-xs text-gray-500">クーポン使用率</p><p id="pd-coupon" class="text-xl font-bold text-sub-2">—</p></div>
+              </div>
+            </section>
+
+            <!-- 成果トラッキング -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-3">成果トラッキング</h2>
+              <canvas id="pdChart" height="160"></canvas>
+              <p class="mt-2 text-xs text-gray-500">
+                ※ クーポンQRや流入URLで計測（来店・予約・売上を可視化）
+              </p>
+            </section>
+
+            <!-- 応募者 / 進行中 -->
+            <section class="bg-white rounded-lg shadow p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="font-bold text-sub-2">応募・進行状況</h2>
+                <button id="pd-open-chat" class="text-sm font-bold text-main">チャットへ</button>
+              </div>
+              <ul id="pd-people" class="divide-y">
+                <!-- JSで挿入（応募者/採用者の例） -->
+              </ul>
+            </section>
+
+            <!-- 計測用リンク / QR  ※ベース色を変えない（白背景はこのセクション内だけ）-->
+            <section class="bg-white rounded-lg shadow p-4">
+              <h2 class="font-bold text-sub-2 mb-2">計測用リンク / QR</h2>
+
+              <!-- 流入URL -->
+              <p class="text-xs text-gray-500">流入URL</p>
+              <div class="flex items-center gap-2 mt-1">
+                <input id="pd-track-url" class="flex-1 border rounded px-2 py-1 text-sm"
+                       readonly value="https://moreach.jp/c/abc123">
+                <button id="pd-copy-url"
+                        class="px-3 py-1 bg-sub-2 text-white text-xs rounded whitespace-nowrap">
+                  コピー
+                </button>
+              </div>
+
+              <!-- QRコード（リンクの下に配置） -->
+              <div class="flex flex-col items-center mt-4">
+                <img src="https://placehold.co/100x100/3D4F75/FFFFFF?text=QR" alt="QRコード" class="rounded">
+                <p class="text-xs text-gray-500 mt-1">店頭計測用</p>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- ===== Scout Bottom Sheet (簡易版) ===== -->
+        <div id="scoutSheet" class="fixed inset-0 hidden z-50">
+          <!-- overlay -->
+          <div id="scoutOverlay" class="absolute inset-0 bg-black/40"></div>
+
+          <!-- sheet -->
+          <div class="absolute left-0 right-0 bottom-0 w-full max-w-sm mx-auto bg-white rounded-t-2xl shadow-2xl p-4 space-y-4">
+            <!-- header -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <img id="scoutAvatar" class="w-10 h-10 rounded-full object-cover" src="" alt="avatar">
+                <div>
+                  <p id="scoutName" class="font-bold text-sub-2 text-sm">インフルエンサー名</p>
+                  <p id="scoutMeta" class="text-xs text-gray-500">フォロワー: - ／ マッチ度: -%</p>
+                </div>
+              </div>
+              <button id="scoutClose" class="p-2 rounded-full hover:bg-gray-100" aria-label="閉じる">
+                <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <!-- どの案件でスカウトするか（既存の関数で選択肢生成） -->
+            <div>
+              <label class="block text-sm font-bold text-sub-2 mb-1">どの案件でスカウトしますか？</label>
+              <select id="scoutProjectSelect" class="w-full border rounded-lg px-3 py-2 text-sm"></select>
+            </div>
+
+            <!-- 希望納期 -->
+            <div>
+              <label class="block text-sm font-bold text-sub-2 mb-1">希望納期</label>
+              <input id="scoutDue" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <!-- メッセージ（テンプレ選択 → 挿入） -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <label for="templateSelect" class="text-sm font-bold text-sub-2">メッセージテンプレート</label>
+                <select id="templateSelect" class="flex-1 border rounded-lg px-3 py-2 text-sm">
+                  <!-- JSで挿入 -->
+                </select>
+                <button id="templateInsert" class="px-3 py-2 text-xs bg-sub-2 text-white rounded-lg font-bold">挿入</button>
+              </div>
+              <textarea id="scoutMessage" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="テンプレを選ぶか、自由に入力してください。"></textarea>
+              
+            </div>
+
+            <!-- actions -->
+            <div class="flex items-center justify-between">
+              <button id="scoutCancel" class="px-4 py-2 text-sm font-bold rounded-lg border">キャンセル</button>
+              <button id="scoutSend" class="px-4 py-2 text-sm font-bold rounded-lg bg-main text-white">スカウトを送信</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 新規案件作成ボタン（FAB：スクロール追従＆スマホ枠内に固定） -->
+        <div id="fabWrap"
+             class="fixed left-1/2 -translate-x-1/2 w-full max-w-sm
+                    bottom-[calc(6rem+env(safe-area-inset-bottom))]
+                    z-30 pointer-events-none">
+          <button id="fabCreate"
+                  class="ml-auto mr-4 bg-main text-white w-16 h-16 rounded-full shadow-lg
+                         flex items-center justify-center pointer-events-auto"
+                  aria-label="案件を作成する">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12M6 12h12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 下部ナビゲーション -->
+        <nav class="fixed bottom-0 left-0 right-0 w-full max-w-sm mx-auto bg-white border-t border-gray-200 flex justify-around shadow-top z-20" role="navigation" aria-label="メイン">
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="dashboard">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <p class="text-xs text-gray-500">ホーム</p>
+            </a>
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="projects">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <p class="text-xs text-gray-500">案件管理</p>
+            </a>
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="influencer-search">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <p class="text-xs text-gray-500">探す</p>
+            </a>
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="chat">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <p class="text-xs text-gray-500">チャット</p>
+            </a>
+            <a href="#" class="bottom-nav-item flex-1 flex flex-col items-center justify-center pt-2 pb-1 text-center" data-screen="mypage">
+                <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <p class="text-xs text-gray-500">マイページ</p>
+            </a>
+        </nav>
+    </div>
+
+    <script src="/Users/satonodoka/Desktop/moreflu1/business.js"></script>
+
+</body>
+</html>
