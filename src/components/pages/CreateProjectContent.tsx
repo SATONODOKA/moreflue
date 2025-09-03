@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send } from 'lucide-react';
 
 export default function CreateProjectContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [storyGenerated, setStoryGenerated] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedInfluencers, setSelectedInfluencers] = useState<number[]>([]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -56,7 +58,11 @@ export default function CreateProjectContent() {
     }
   };
 
-  const handleProjectPublish = () => {
+  const handleAutoMatch = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAutoMatch = () => {
     // 新しい案件を作成
     const newProject = {
       id: Date.now(),
@@ -71,22 +77,73 @@ export default function CreateProjectContent() {
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
       confirmationFlow: formData.confirmationFlow,
       targetAudience: formData.targetAudience,
-      duration: formData.duration
+      duration: formData.duration,
+      distributionType: 'auto-match'
     };
 
-    // localStorageに保存（実際の実装ではAPIに送信）
+    // localStorageに保存
     const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
     existingProjects.unshift(newProject);
     localStorage.setItem('projects', JSON.stringify(existingProjects));
 
-    alert('案件を公開しました！案件管理タブで確認できます。');
+    setShowConfirmModal(false);
+    alert('マッチしそうなインフルエンサーに案件を配信しました！');
+    // 案件管理タブに移動するロジック（実際の実装では親コンポーネントに通知）
+    window.dispatchEvent(new CustomEvent('switchToManageTab'));
+  };
+
+  const handleNominationFlow = () => {
+    setCurrentStep(5); // インフルエンサー選択ステップに移動
+  };
+
+  const handleInfluencerSelect = (influencerId: number) => {
+    setSelectedInfluencers(prev => 
+      prev.includes(influencerId) 
+        ? prev.filter(id => id !== influencerId)
+        : [...prev, influencerId]
+    );
+  };
+
+  const handleDistributeToSelected = () => {
+    if (selectedInfluencers.length === 0) {
+      alert('インフルエンサーを選択してください');
+      return;
+    }
+
+    // 新しい案件を作成
+    const newProject = {
+      id: Date.now(),
+      title: formData.title,
+      description: formData.storyText,
+      status: '募集中',
+      budget: `¥${formData.paymentAmount.toLocaleString()}`,
+      rewardRate: `${formData.rewardRate}%`,
+      expectedRevenue: formData.expectedRevenue,
+      reach: 0,
+      engagement: 0,
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      confirmationFlow: formData.confirmationFlow,
+      targetAudience: formData.targetAudience,
+      duration: formData.duration,
+      distributionType: 'nomination',
+      selectedInfluencers: selectedInfluencers
+    };
+
+    // localStorageに保存
+    const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    existingProjects.unshift(newProject);
+    localStorage.setItem('projects', JSON.stringify(existingProjects));
+
+    alert(`${selectedInfluencers.length}人のインフルエンサーに案件を配信しました！`);
+    // 案件管理タブに移動
+    window.dispatchEvent(new CustomEvent('switchToManageTab'));
   };
 
   const steps = [
     { id: 1, title: '数字シミュレーション' },
     { id: 2, title: 'ストーリー生成' },
     { id: 3, title: '詳細設定' },
-    { id: 4, title: '確認・公開' }
+    { id: 4, title: '確認・配信' }
   ];
 
   const renderStep1 = () => (
@@ -438,22 +495,200 @@ export default function CreateProjectContent() {
         </div>
       </div>
 
-      <div className="flex space-x-3">
+      <div className="space-y-3">
         <button 
           onClick={() => setCurrentStep(3)}
-          className="button-secondary flex-1"
+          className="button-secondary w-full"
         >
           戻って修正
         </button>
-        <button 
-          onClick={handleProjectPublish}
-          className="button-primary flex-1"
-        >
-          案件を公開
-        </button>
+
+        <div className="grid grid-cols-1 gap-3">
+          <button 
+            onClick={handleAutoMatch}
+            className="bg-primary text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-primary-dark transition-colors flex items-center justify-center"
+          >
+            <UserCheck className="mr-2" size={20} />
+            マッチしそうな人に送る
+          </button>
+          
+          <button 
+            onClick={handleNominationFlow}
+            className="bg-accent text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-accent-dark transition-colors flex items-center justify-center"
+          >
+            <Search className="mr-2" size={20} />
+            指名したインフルエンサーに送る
+          </button>
+        </div>
       </div>
     </div>
   );
+
+  const renderStep5 = () => {
+    // サンプルインフルエンサーデータ
+    const sampleInfluencers = [
+      {
+        id: 1,
+        name: "田中美咲",
+        username: "@misaki_tanaka",
+        followers: 25000,
+        engagement: 4.8,
+        category: "ライフスタイル",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 95,
+        recentPosts: 156
+      },
+      {
+        id: 2,
+        name: "佐藤ゆき",
+        username: "@yuki_sato",
+        followers: 18500,
+        engagement: 5.2,
+        category: "グルメ",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 92,
+        recentPosts: 203
+      },
+      {
+        id: 3,
+        name: "山田花子",
+        username: "@hanako_yamada",
+        followers: 32000,
+        engagement: 3.9,
+        category: "ファッション",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 88,
+        recentPosts: 89
+      },
+      {
+        id: 4,
+        name: "鈴木太郎",
+        username: "@taro_suzuki",
+        followers: 15200,
+        engagement: 6.1,
+        category: "ライフスタイル",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 85,
+        recentPosts: 124
+      },
+      {
+        id: 5,
+        name: "高橋まり",
+        username: "@mari_takahashi",
+        followers: 41000,
+        engagement: 4.2,
+        category: "美容",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 82,
+        recentPosts: 178
+      },
+      {
+        id: 6,
+        name: "伊藤けん",
+        username: "@ken_ito",
+        followers: 28500,
+        engagement: 5.5,
+        category: "グルメ",
+        avatar: "/api/placeholder/40/40",
+        matchScore: 79,
+        recentPosts: 145
+      }
+    ];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-tertiary">インフルエンサー選択</h2>
+          <div className="text-sm text-gray-600">
+            {selectedInfluencers.length}人選択中
+          </div>
+        </div>
+
+        <div className="card p-3">
+          <div className="flex items-center space-x-2 mb-3">
+            <Search className="text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="インフルエンサーを検索..."
+              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {sampleInfluencers.map((influencer) => (
+            <div
+              key={influencer.id}
+              className={`card p-3 cursor-pointer transition-colors ${
+                selectedInfluencers.includes(influencer.id) 
+                  ? 'ring-2 ring-primary bg-primary/5' 
+                  : 'hover:bg-gray-50'
+              }`}
+              onClick={() => handleInfluencerSelect(influencer.id)}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                    <Users size={16} className="text-gray-500" />
+                  </div>
+                  {selectedInfluencers.includes(influencer.id) && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                      <CheckCircle size={12} className="text-white" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-medium text-tertiary text-sm">{influencer.name}</h3>
+                    <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      マッチ度 {influencer.matchScore}%
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 mb-2">
+                    {influencer.username} • {influencer.category}
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <Users size={12} />
+                      <span>{influencer.followers.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Heart size={12} />
+                      <span>{influencer.engagement}%</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Eye size={12} />
+                      <span>{influencer.recentPosts}投稿</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => setCurrentStep(4)}
+            className="button-secondary flex-1"
+          >
+            戻る
+          </button>
+          <button 
+            onClick={handleDistributeToSelected}
+            className="bg-primary text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-primary-dark transition-colors flex-1 flex items-center justify-center"
+            disabled={selectedInfluencers.length === 0}
+          >
+            <Send className="mr-2" size={16} />
+            配信する ({selectedInfluencers.length}人)
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen p-3 space-y-2">
@@ -490,6 +725,34 @@ export default function CreateProjectContent() {
       {currentStep === 2 && renderStep2()}
       {currentStep === 3 && renderStep3()}
       {currentStep === 4 && renderStep4()}
+      {currentStep === 5 && renderStep5()}
+
+      {/* 確認モーダル */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-tertiary mb-3">配信確認</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              マッチしそうなインフルエンサーに案件を配信しますか？
+              配信後は案件管理の「募集中」タブで確認できます。
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="button-secondary flex-1"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={handleConfirmAutoMatch}
+                className="button-primary flex-1"
+              >
+                配信する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

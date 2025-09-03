@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import TabNavigation from './TabNavigation';
 import HomeContent from '@/components/pages/HomeContent';
 import CreateProjectContent from '@/components/pages/CreateProjectContent';
@@ -14,6 +14,19 @@ interface MobileLayoutProps {
 
 export default function MobileLayout({ children }: MobileLayoutProps) {
   const [activeTab, setActiveTab] = useState('home');
+
+  useEffect(() => {
+    // 案件管理タブへの切り替えイベントリスナー
+    const handleSwitchToManageTab = () => {
+      setActiveTab('manage');
+    };
+
+    window.addEventListener('switchToManageTab', handleSwitchToManageTab);
+
+    return () => {
+      window.removeEventListener('switchToManageTab', handleSwitchToManageTab);
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
