@@ -9,6 +9,7 @@ const Navigation = () => {
   const navItems = [
     { href: '/', label: 'ホーム', icon: '🏠' },
     { href: '/projects', label: '案件管理', icon: '📋' },
+    { href: '/messages', label: 'チャット', icon: '💬' },
     { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
     { href: '/profile', label: 'プロフィール', icon: '👤' },
   ];

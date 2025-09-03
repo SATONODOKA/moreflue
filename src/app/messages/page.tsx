@@ -64,12 +64,7 @@ export default function MessagesPage() {
       {/* ヘッダー */}
       <header className="bg-white px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-smoky-navy hover:text-salmon-coral transition-colors">
-              ←
-            </Link>
-            <h1 className="text-xl font-bold text-smoky-navy">メッセージ</h1>
-          </div>
+          <h1 className="text-xl font-bold text-smoky-navy">チャット</h1>
           <button className="p-2 text-smoky-navy hover:text-salmon-coral transition-colors">
             <span className="text-xl">✏️</span>
           </button>
