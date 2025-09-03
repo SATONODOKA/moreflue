@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# インフルエンサー案件管理アプリ
 
-## Getting Started
+インフルエンサーが店舗案件を効率的に管理できるプラットフォームです。案件の発見から進行管理、納品、実績化まで一貫してサポートします。
 
-First, run the development server:
+## 特徴
+
+- **案件発見**: タイムライン型で新着・おすすめ案件を表示
+- **案件管理**: Inbox、進行中、完了の3段階で案件を管理
+- **ダッシュボード**: 報酬や成果を可視化して実績を把握
+- **プロフィール**: SNSアカウントと実績を一元管理
+
+## 技術スタック
+
+- **フレームワーク**: Next.js 15 (App Router)
+- **言語**: TypeScript
+- **スタイリング**: TailwindCSS
+- **デプロイ**: Netlify対応
+
+## カラーガイドライン
+
+- **メインカラー**: サーモンコーラル (#FF6F61) - 応募ボタン、新着バッジ
+- **サブカラー1**: ライトグレージュ (#F5F2EF) - 背景、安心感の演出
+- **サブカラー2**: スモーキーネイビー (#3D4F75) - タブバー、見出し
+- **アクセントカラー**: サンセットイエロー (#F4B95F) - 成果数値、マッチ度
+
+## セットアップ
 
 ```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# ビルド
+npm run build
+
+# Netlify用の静的ファイル生成
+npm run export
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 画面構成
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. ホーム（/）
+- 新着案件とおすすめ案件をカード形式で表示
+- 店舗名、報酬、マッチ度スコアを一覧表示
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. 案件管理（/projects）
+- Inbox: 未対応案件
+- 進行中: チャット形式で進行管理
+- 完了: 履歴と実績表示
 
-## Learn More
+### 3. ダッシュボード（/dashboard）
+- 今月の報酬合計と統計
+- 成果ファネル（インプレッション→クリック→来店→報酬）
+- 案件別成果の詳細表示
 
-To learn more about Next.js, take a look at the following resources:
+### 4. プロフィール（/profile）
+- 基本情報とSNSアカウント
+- カテゴリ別実績
+- 信頼性指標
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Netlifyデプロイ
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. GitHubリポジトリにプッシュ
+2. Netlifyでリポジトリを連携
+3. ビルド設定:
+   - Build command: `npm run build`
+   - Publish directory: `out`
+4. 環境変数（必要に応じて）を設定
 
-## Deploy on Vercel
+## 開発方針
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **モバイル優先**: レスポンシブデザインでスマートフォンを重視
+- **操作性**: 最小ステップでの操作を実現
+- **視認性**: 未読・未対応を色とバッジで強調
+- **拡張性**: SNS連携や分析ツールとの接続を見据えた設計
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ライセンス
+
+MIT License
