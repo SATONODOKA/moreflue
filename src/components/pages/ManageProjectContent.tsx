@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Edit, MoreVertical } from 'lucide-react';
+import { Search, Filter, Eye, Edit, MoreVertical, CheckCircle } from 'lucide-react';
 
 export default function ManageProjectContent() {
   const [projects, setProjects] = useState([
@@ -38,6 +38,8 @@ export default function ManageProjectContent() {
   ]);
 
   const [filter, setFilter] = useState('all');
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   // localStorageから案件を読み込み
   useEffect(() => {
@@ -92,6 +94,33 @@ export default function ManageProjectContent() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
+  const handleCompleteProject = (projectId) => {
+    setSelectedProjectId(projectId);
+    setShowCompleteModal(true);
+  };
+
+  const confirmCompleteProject = () => {
+    // 案件を完了に変更
+    const updatedProjects = projects.map(project => 
+      project.id === selectedProjectId 
+        ? { ...project, status: '完了' }
+        : project
+    );
+    setProjects(updatedProjects);
+    
+    // localStorageも更新
+    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    const updatedStoredProjects = storedProjects.map(project => 
+      project.id === selectedProjectId 
+        ? { ...project, status: '完了' }
+        : project
+    );
+    localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
+    
+    setShowCompleteModal(false);
+    setSelectedProjectId(null);
+  };
+
   const filteredProjects = projects.filter(project => {
     if (filter === 'all') return true;
     return project.status === filter;
@@ -119,9 +148,9 @@ export default function ManageProjectContent() {
         <div className="flex space-x-2 overflow-x-auto">
           {[
             { key: 'all', label: 'すべて' },
+            { key: '下書き', label: '下書き' },
             { key: '進行中', label: '進行中' },
-            { key: '完了', label: '完了' },
-            { key: '募集中', label: '募集中' }
+            { key: '完了', label: '実績' }
           ].map((filterOption) => (
             <button
               key={filterOption.key}
@@ -194,14 +223,52 @@ export default function ManageProjectContent() {
                 <Eye size={16} />
                 <span>詳細</span>
               </button>
-              <button className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors">
-                <Edit size={16} />
-                <span>編集</span>
-              </button>
+              {project.status === '進行中' && (
+                <button 
+                  onClick={() => handleCompleteProject(project.id)}
+                  className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <CheckCircle size={16} />
+                  <span>完了</span>
+                </button>
+              )}
+              {project.status === '下書き' && (
+                <button className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors">
+                  <Edit size={16} />
+                  <span>編集</span>
+                </button>
+              )}
             </div>
           </div>
         ))}
       </section>
+
+      {/* 完了確認モーダル */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-tertiary mb-3">案件を完了にしますか？</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              この案件を完了にすると、実績タブに移動します。
+              この操作は取り消すことができません。
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowCompleteModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={confirmCompleteProject}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+              >
+                完了にする
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

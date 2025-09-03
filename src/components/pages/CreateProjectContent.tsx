@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send } from 'lucide-react';
+import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save } from 'lucide-react';
 
 export default function CreateProjectContent() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -9,6 +9,7 @@ export default function CreateProjectContent() {
   const [storyGenerated, setStoryGenerated] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedInfluencers, setSelectedInfluencers] = useState<number[]>([]);
+  const [showDraftSaveModal, setShowDraftSaveModal] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -68,7 +69,7 @@ export default function CreateProjectContent() {
       id: Date.now(),
       title: formData.title,
       description: formData.storyText,
-      status: '募集中',
+      status: '進行中',
       budget: `¥${formData.paymentAmount.toLocaleString()}`,
       rewardRate: `${formData.rewardRate}%`,
       expectedRevenue: formData.expectedRevenue,
@@ -115,7 +116,7 @@ export default function CreateProjectContent() {
       id: Date.now(),
       title: formData.title,
       description: formData.storyText,
-      status: '募集中',
+      status: '進行中',
       budget: `¥${formData.paymentAmount.toLocaleString()}`,
       rewardRate: `${formData.rewardRate}%`,
       expectedRevenue: formData.expectedRevenue,
@@ -136,6 +137,36 @@ export default function CreateProjectContent() {
 
     alert(`${selectedInfluencers.length}人のインフルエンサーに案件を配信しました！`);
     // 案件管理タブに移動
+    window.dispatchEvent(new CustomEvent('switchToManageTab'));
+  };
+
+  const handleSaveDraft = () => {
+    // 下書きを保存
+    const draftProject = {
+      id: Date.now(),
+      title: formData.title || '無題の案件',
+      description: formData.storyText,
+      status: '下書き',
+      budget: `¥${formData.paymentAmount.toLocaleString()}`,
+      rewardRate: `${formData.rewardRate}%`,
+      expectedRevenue: formData.expectedRevenue,
+      reach: 0,
+      engagement: 0,
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      confirmationFlow: formData.confirmationFlow,
+      targetAudience: formData.targetAudience,
+      duration: formData.duration,
+      currentStep: currentStep,
+      formData: formData,
+      storyGenerated: storyGenerated
+    };
+
+    const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    existingProjects.unshift(draftProject);
+    localStorage.setItem('projects', JSON.stringify(existingProjects));
+    
+    setShowDraftSaveModal(false);
+    alert('下書きを保存しました');
     window.dispatchEvent(new CustomEvent('switchToManageTab'));
   };
 
@@ -693,9 +724,16 @@ export default function CreateProjectContent() {
   return (
     <div className="min-h-screen p-3 space-y-2">
       {/* ヘッダー */}
-      <header className="text-center py-2">
+      <header className="text-center py-2 relative">
         <h1 className="text-xl font-bold text-tertiary mb-1">新規案件作成</h1>
         <p className="text-gray-600 text-xs">数字と想いで魅力的な案件を作成</p>
+        <button
+          onClick={() => setShowDraftSaveModal(true)}
+          className="absolute right-0 top-0 p-2 text-gray-600 hover:text-primary"
+        >
+          <Save size={24} />
+          <span className="text-xs">下書き</span>
+        </button>
       </header>
 
       {/* ステップインジケーター - 2行に分けて表示 */}
@@ -734,7 +772,7 @@ export default function CreateProjectContent() {
             <h3 className="text-lg font-semibold text-tertiary mb-3">配信確認</h3>
             <p className="text-gray-600 mb-6 text-sm">
               マッチしそうなインフルエンサーに案件を配信しますか？
-              配信後は案件管理の「募集中」タブで確認できます。
+              配信後は案件管理の「進行中」タブで確認できます。
             </p>
             <div className="flex space-x-3">
               <button 
@@ -748,6 +786,33 @@ export default function CreateProjectContent() {
                 className="button-primary flex-1"
               >
                 配信する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 下書き保存モーダル */}
+      {showDraftSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-tertiary mb-3">下書き保存</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              現在の入力内容を下書きとして保存しますか？
+              案件管理の「下書き」タブから編集を再開できます。
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowDraftSaveModal(false)}
+                className="button-secondary flex-1"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={handleSaveDraft}
+                className="button-primary flex-1"
+              >
+                保存する
               </button>
             </div>
           </div>
