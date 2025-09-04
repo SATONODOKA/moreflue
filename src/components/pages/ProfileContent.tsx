@@ -3,8 +3,34 @@
 import { useState, useEffect } from 'react';
 import { Settings, Bell, HelpCircle, LogOut, Edit, Camera, ChevronRight, Trophy, Clock, CheckCircle } from 'lucide-react';
 
+interface UserInfo {
+  name: string;
+  email: string;
+  company: string;
+  plan: string;
+  avatar: string | null;
+}
+
+interface Stats {
+  totalProjects: number;
+  successRate: number;
+  totalSpent: number;
+  averageEngagement: number;
+}
+
+interface CompletedProject {
+  id: number;
+  title: string;
+  description?: string;
+  budget: string;
+  deadline: string;
+  reach: number;
+  engagement: number;
+  status?: string;
+}
+
 export default function ProfileContent() {
-  const [userInfo] = useState({
+  const [userInfo] = useState<UserInfo>({
     name: "田中太郎",
     email: "tanaka@example.com",
     company: "株式会社サンプル",
@@ -12,21 +38,25 @@ export default function ProfileContent() {
     avatar: null
   });
 
-  const [stats] = useState({
+  const [stats] = useState<Stats>({
     totalProjects: 24,
     successRate: 92,
     totalSpent: 1250000,
     averageEngagement: 4.3
   });
 
-  const [activeTab, setActiveTab] = useState('統計');
-  const [completedProjects, setCompletedProjects] = useState([]);
+  const [activeTab, setActiveTab] = useState<string>('統計');
+  const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([]);
 
   // 完了済み案件を取得
   useEffect(() => {
-    const projects = JSON.parse(localStorage.getItem('projects') || '[]');
-    const completed = projects.filter(p => p.status === '完了');
-    setCompletedProjects(completed);
+    try {
+      const projects = JSON.parse(localStorage.getItem('projects') || '[]') as CompletedProject[];
+      const completed = projects.filter(p => p.status === '完了');
+      setCompletedProjects(completed);
+    } catch (error) {
+      console.error('Error loading completed projects:', error);
+    }
   }, []);
 
   return (

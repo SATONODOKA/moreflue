@@ -3,6 +3,30 @@
 import { useState } from 'react';
 import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save } from 'lucide-react';
 
+interface ProjectFormData {
+  title: string;
+  description: string;
+  expectedRevenue: number;
+  paymentAmount: number;
+  rewardRate: number;
+  duration: string;
+  targetAudience: string;
+  storyText: string;
+  confirmationFlow: string;
+}
+
+interface InfluencerData {
+  id: number;
+  name: string;
+  username: string;
+  followers: number;
+  engagement: number;
+  category: string;
+  avatar: string;
+  matchScore: number;
+  recentPosts: number;
+}
+
 export default function CreateProjectContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
@@ -11,7 +35,7 @@ export default function CreateProjectContent() {
   const [selectedInfluencers, setSelectedInfluencers] = useState<number[]>([]);
   const [showDraftSaveModal, setShowDraftSaveModal] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProjectFormData>({
     title: '',
     description: 'instagram-post', // 初期値を設定
     expectedRevenue: 100000, // 想定売上
@@ -557,7 +581,7 @@ export default function CreateProjectContent() {
 
   const renderStep5 = () => {
     // サンプルインフルエンサーデータ
-    const sampleInfluencers = [
+    const sampleInfluencers: InfluencerData[] = [
       {
         id: 1,
         name: "田中美咲",

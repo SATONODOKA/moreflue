@@ -3,8 +3,47 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, Eye, Edit, MoreVertical, CheckCircle, Trash2, PlayCircle, Users, MessageCircle, Send } from 'lucide-react';
 
+interface Project {
+  id: number;
+  title: string;
+  influencer?: string;
+  status: string;
+  budget: string;
+  reach: number;
+  engagement: number;
+  deadline: string;
+  description?: string;
+  rewardRate?: string;
+}
+
+interface Candidate {
+  id: number;
+  name: string;
+  username: string;
+  followers: number;
+  engagement: number;
+  status: string;
+  sentDate: string;
+}
+
+interface MatchedUser {
+  id: number;
+  name: string;
+  username: string;
+  avatar: string | null;
+  lastMessage: string;
+  timestamp: string;
+}
+
+interface ChatMessage {
+  id: number;
+  sender: 'user' | 'influencer';
+  message: string;
+  timestamp: string;
+}
+
 export default function ManageProjectContent() {
-  const [projects, setProjects] = useState([
+  const [projects, setProjects] = useState<Project[]>([
     {
       id: 1,
       title: "新商品プロモーション",
@@ -37,56 +76,60 @@ export default function ManageProjectContent() {
     }
   ]);
 
-  const [filter, setFilter] = useState('下書き');
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [showCandidatesModal, setShowCandidatesModal] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
+  const [filter, setFilter] = useState<string>('下書き');
+  const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showCandidatesModal, setShowCandidatesModal] = useState<boolean>(false);
+  const [newMessage, setNewMessage] = useState<string>('');
 
   // localStorageから案件を読み込み
   useEffect(() => {
     const loadProjects = () => {
-      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-      if (storedProjects.length > 0) {
-        // 既存のサンプルデータと結合
-        const defaultProjects = [
-          {
-            id: 1,
-            title: "新商品プロモーション",
-            influencer: "田中美咲",
-            status: "進行中",
-            budget: "50,000円",
-            reach: 15000,
-            engagement: 4.8,
-            deadline: "2024-01-25"
-          },
-          {
-            id: 2,
-            title: "季節限定メニュー",
-            influencer: "佐藤ゆき",
-            status: "完了",
-            budget: "75,000円",
-            reach: 22000,
-            engagement: 5.2,
-            deadline: "2024-01-15"
-          },
-          {
-            id: 3,
-            title: "店舗オープン告知",
-            influencer: "山田花子",
-            status: "進行中",
-            budget: "30,000円",
-            reach: 18500,
-            engagement: 3.9,
-            deadline: "2024-01-30"
-          }
-        ];
-        
-        // 新しく作成された案件を上に表示
-        setProjects([...storedProjects, ...defaultProjects]);
+      try {
+        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
+        if (storedProjects.length > 0) {
+          // 既存のサンプルデータと結合
+          const defaultProjects: Project[] = [
+            {
+              id: 1,
+              title: "新商品プロモーション",
+              influencer: "田中美咲",
+              status: "進行中",
+              budget: "50,000円",
+              reach: 15000,
+              engagement: 4.8,
+              deadline: "2024-01-25"
+            },
+            {
+              id: 2,
+              title: "季節限定メニュー",
+              influencer: "佐藤ゆき",
+              status: "完了",
+              budget: "75,000円",
+              reach: 22000,
+              engagement: 5.2,
+              deadline: "2024-01-15"
+            },
+            {
+              id: 3,
+              title: "店舗オープン告知",
+              influencer: "山田花子",
+              status: "進行中",
+              budget: "30,000円",
+              reach: 18500,
+              engagement: 3.9,
+              deadline: "2024-01-30"
+            }
+          ];
+          
+          // 新しく作成された案件を上に表示
+          setProjects([...storedProjects, ...defaultProjects]);
+        }
+      } catch (error) {
+        console.error('Error loading projects from localStorage:', error);
       }
     };
 
@@ -99,12 +142,14 @@ export default function ManageProjectContent() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  const handleCompleteProject = (projectId) => {
+  const handleCompleteProject = (projectId: number) => {
     setSelectedProjectId(projectId);
     setShowCompleteModal(true);
   };
 
   const confirmCompleteProject = () => {
+    if (selectedProjectId === null) return;
+    
     // 案件を完了に変更
     const updatedProjects = projects.map(project => 
       project.id === selectedProjectId 
@@ -113,45 +158,55 @@ export default function ManageProjectContent() {
     );
     setProjects(updatedProjects);
     
-    // localStorageも更新
-    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    const updatedStoredProjects = storedProjects.map(project => 
-      project.id === selectedProjectId 
-        ? { ...project, status: '完了' }
-        : project
-    );
-    localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
+    try {
+      // localStorageも更新
+      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
+      const updatedStoredProjects = storedProjects.map(project => 
+        project.id === selectedProjectId 
+          ? { ...project, status: '完了' }
+          : project
+      );
+      localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
+    } catch (error) {
+      console.error('Error updating localStorage:', error);
+    }
     
     setShowCompleteModal(false);
     setSelectedProjectId(null);
   };
 
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = (projectId: number) => {
     setSelectedProjectId(projectId);
     setShowDeleteModal(true);
   };
 
   const confirmDeleteProject = () => {
+    if (selectedProjectId === null) return;
+    
     // 案件を削除
     const updatedProjects = projects.filter(project => project.id !== selectedProjectId);
     setProjects(updatedProjects);
     
-    // localStorageも更新
-    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    const updatedStoredProjects = storedProjects.filter(project => project.id !== selectedProjectId);
-    localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
+    try {
+      // localStorageも更新
+      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
+      const updatedStoredProjects = storedProjects.filter(project => project.id !== selectedProjectId);
+      localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
+    } catch (error) {
+      console.error('Error updating localStorage:', error);
+    }
     
     setShowDeleteModal(false);
     setSelectedProjectId(null);
   };
 
-  const handleResumeEdit = (project) => {
+  const handleResumeEdit = (project: Project) => {
     // 編集再開のロジック（後で実装）
     console.log('編集再開:', project);
     alert('編集再開機能は後で実装予定です');
   };
 
-  const handleShowDetail = (project) => {
+  const handleShowDetail = (project: Project) => {
     setSelectedProject(project);
     setShowDetailModal(true);
   };
@@ -168,7 +223,7 @@ export default function ManageProjectContent() {
   };
 
   // サンプル候補者データ
-  const candidates = [
+  const candidates: Candidate[] = [
     {
       id: 1,
       name: '田中美咲',
@@ -190,7 +245,7 @@ export default function ManageProjectContent() {
   ];
 
   // サンプルマッチ済みユーザー
-  const matchedUsers = [
+  const matchedUsers: MatchedUser[] = [
     {
       id: 1,
       name: '山田花子',
@@ -202,7 +257,7 @@ export default function ManageProjectContent() {
   ];
 
   // サンプルチャットメッセージ
-  const chatMessages = [
+  const chatMessages: ChatMessage[] = [
     {
       id: 1,
       sender: 'user',
@@ -533,7 +588,7 @@ export default function ManageProjectContent() {
                           onChange={(e) => setNewMessage(e.target.value)}
                           placeholder="メッセージを入力..."
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         />
                         <button 
                           onClick={handleSendMessage}
