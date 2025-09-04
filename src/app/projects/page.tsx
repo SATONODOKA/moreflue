@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CompactProjectCard from '@/components/CompactProjectCard';
 import ClearCacheButton from '@/components/ClearCacheButton';
@@ -71,13 +71,12 @@ const sampleProjects = {
   }>,
 };
 
-export default function ProjectsPage() {
+function ProjectsContent() {
   const [activeTab, setActiveTab] = useState<'scout' | 'inProgress'>('scout');
   const [showApplied, setShowApplied] = useState(false);
   const [declinedProjects, setDeclinedProjects] = useState<string[]>([]);
   const [approvedProjects, setApprovedProjects] = useState<string[]>([]);
   const [projects, setProjects] = useState(sampleProjects);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // キャッシュからデータを復元
@@ -87,8 +86,25 @@ export default function ProjectsPage() {
     
     const cachedDeclined = getCachedData<string[]>(CACHE_KEYS.DECLINED_PROJECTS, []);
     const cachedApproved = getCachedData<string[]>(CACHE_KEYS.APPROVED_PROJECTS, []);
-    const cachedAppliedProjects = getCachedData<any[]>(CACHE_KEYS.APPLIED_PROJECTS, []);
-    const cachedInProgressProjects = getCachedData<any[]>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
+    const cachedAppliedProjects = getCachedData<Array<{
+      id: string;
+      storeName: string;
+      reward: { type: 'fixed' | 'performance'; amount: number; performanceRate?: number; };
+      matchScore: number;
+      category: string;
+      location: string;
+      appliedDate: string;
+      status: string;
+    }>>(CACHE_KEYS.APPLIED_PROJECTS, []);
+    const cachedInProgressProjects = getCachedData<Array<{
+      id: string;
+      storeName: string;
+      reward: { type: 'fixed' | 'performance'; amount: number; performanceRate?: number; };
+      matchScore: number;
+      category: string;
+      location: string;
+      status: string;
+    }>>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
     
     setDeclinedProjects(cachedDeclined);
     setApprovedProjects(cachedApproved);
@@ -419,5 +435,13 @@ export default function ProjectsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProjectsContent />
+    </Suspense>
   );
 }

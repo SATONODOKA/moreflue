@@ -4,8 +4,22 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+interface MessageData {
+  id: string;
+  sender: 'user' | 'store';
+  message: string;
+  timestamp: string;
+}
+
+interface ChatData {
+  storeName: string;
+  avatar: string;
+  isOnline: boolean;
+  messages: MessageData[];
+}
+
 // サンプルメッセージデータ
-const messageDetails: { [key: string]: any } = {
+const messageDetails: { [key: string]: ChatData } = {
   '1': {
     storeName: 'カフェ・ド・パリ',
     avatar: 'カ',
@@ -95,7 +109,7 @@ export default function ChatDetail() {
   const params = useParams();
   const router = useRouter();
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const chatData = messageDetails[params.id as string];
@@ -128,9 +142,9 @@ export default function ChatDetail() {
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
     
-    const userMessage = {
+    const userMessage: MessageData = {
       id: Date.now().toString(),
-      sender: 'user',
+      sender: 'user' as const,
       message: newMessage,
       timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
     };
@@ -145,9 +159,9 @@ export default function ChatDetail() {
         '承知いたしました。撮影日時の調整をさせていただきますね。',
         'ご質問ありがとうございます。お答えさせていただきます。',
       ];
-      const storeMessage = {
+      const storeMessage: MessageData = {
         id: (Date.now() + 1).toString(),
-        sender: 'store',
+        sender: 'store' as const,
         message: mockReplies[Math.floor(Math.random() * mockReplies.length)],
         timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
       };
@@ -216,7 +230,7 @@ export default function ChatDetail() {
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder="メッセージを入力..."
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
           />

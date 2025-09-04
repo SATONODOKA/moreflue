@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProjectCard from '@/components/ProjectCard';
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
@@ -85,7 +85,7 @@ const sampleProjects = {
   ],
 };
 
-export default function Home() {
+function HomeContent() {
   const [activeTab, setActiveTab] = useState<'recommended' | 'following'>('recommended');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [projects, setProjects] = useState(sampleProjects);
@@ -258,5 +258,13 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

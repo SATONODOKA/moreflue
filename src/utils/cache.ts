@@ -103,7 +103,7 @@ export const clearAllCache = (): void => {
 };
 
 // 重複データを削除する関数
-export const deduplicateArray = <T>(array: T[], keyFn: (item: T) => string): T[] => {
+export const deduplicateArray = <T extends Record<string, unknown>>(array: T[], keyFn: (item: T) => string): T[] => {
   const seen = new Set<string>();
   return array.filter(item => {
     const key = keyFn(item);
@@ -117,9 +117,9 @@ export const deduplicateArray = <T>(array: T[], keyFn: (item: T) => string): T[]
 
 // 応募済み案件の重複を削除
 export const cleanupAppliedProjects = (): void => {
-  const appliedProjects = getCachedData<any[]>(CACHE_KEYS.APPLIED_PROJECTS, []);
+  const appliedProjects = getCachedData<Array<Record<string, unknown> & { id: string }>>(CACHE_KEYS.APPLIED_PROJECTS, []);
   const homeAppliedProjects = getCachedData<string[]>(CACHE_KEYS.HOME_APPLIED_PROJECTS, []);
-  const inProgressProjects = getCachedData<any[]>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
+  const inProgressProjects = getCachedData<Array<Record<string, unknown> & { id: string }>>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
   
   // 応募済み案件の重複削除
   const cleanedAppliedProjects = deduplicateArray(appliedProjects, (item) => item.id);

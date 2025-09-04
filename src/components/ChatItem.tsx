@@ -9,7 +9,6 @@ interface ChatItemProps {
 }
 
 const ChatItem = ({
-  id: _id,
   storeName,
   lastMessage,
   timestamp,

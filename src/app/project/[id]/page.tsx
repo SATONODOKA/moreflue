@@ -5,8 +5,33 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
 
+interface ProjectDetails {
+  id: string;
+  storeName: string;
+  category: string;
+  location: string;
+  imageUrl: string;
+  story: string;
+  reward: {
+    type: 'fixed' | 'performance';
+    amount: number;
+    performanceRate?: number;
+  };
+  matchScore: number;
+  platforms: string[];
+  isFollowing: boolean;
+  details: {
+    travelTime: string;
+    postRequirements: string;
+    preApproval: boolean;
+    performanceGoals: string;
+    timeline: string;
+    additionalNotes: string;
+  };
+}
+
 // サンプル詳細データ
-const projectDetails: { [key: string]: any } = {
+const projectDetails: { [key: string]: ProjectDetails } = {
   // ホームフィード用の店舗データ（ID 1-3）
   '1': {
     id: '1',
@@ -239,11 +264,11 @@ export default function ProjectDetail() {
     setCachedData(CACHE_KEYS.APPROVED_PROJECTS, newApproved);
     
     // 進行中案件に追加
-    const inProgressProjects = getCachedData<any[]>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
+    const inProgressProjects = getCachedData<Array<ProjectDetails & { status: string }>>(CACHE_KEYS.IN_PROGRESS_PROJECTS, []);
     const newInProgressProject = {
       ...project,
       status: '交渉中'
-    };
+    } as ProjectDetails & { status: string };
     const newInProgress = [...inProgressProjects, newInProgressProject];
     setCachedData(CACHE_KEYS.IN_PROGRESS_PROJECTS, newInProgress);
     
@@ -464,7 +489,7 @@ export default function ProjectDetail() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="メッセージを入力..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
             />
