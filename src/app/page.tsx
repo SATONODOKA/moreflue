@@ -144,7 +144,8 @@ function HomeContent() {
       timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30分前
       isRead: false,
       projectId: '1',
-      actionType: 'reservation',
+      actionType: 'chat',
+      chatId: '1',
     },
     {
       id: '2',
@@ -154,7 +155,8 @@ function HomeContent() {
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2時間前
       isRead: false,
       projectId: '2',
-      actionType: 'submit',
+      actionType: 'chat',
+      chatId: '3',
     },
     {
       id: '3',
@@ -264,6 +266,7 @@ function HomeContent() {
     isRead: boolean;
     projectId: string;
     actionType: string;
+    chatId?: string;
   }) => {
     // 未読を既読にする
     setNotifications(prev => 
@@ -272,11 +275,14 @@ function HomeContent() {
 
     // アクションタイプに応じてページ遷移
     switch (notification.actionType) {
+      case 'chat':
+        router.push(`/messages/${notification.chatId}`);
+        break;
       case 'reservation':
         router.push(`/project/${notification.projectId}/reservation`);
         break;
       case 'submit':
-        router.push(`/project/${notification.projectId}/submit`);
+        router.push(`/project/submit`);
         break;
       case 'manage':
         router.push(`/project/manage?status=progress`);
@@ -307,9 +313,9 @@ function HomeContent() {
   return (
     <div className="bg-white min-h-screen">
       {/* ヘッダー */}
-      <header className="bg-white px-4 py-3 sticky top-0 z-40">
+      <header className="bg-salmon-coral px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-smoky-navy">moreflue</h1>
+          <h1 className="text-2xl font-bold text-white">moreflue</h1>
           <div className="flex items-center gap-2">
             <button 
               onClick={(e) => {
@@ -318,18 +324,12 @@ function HomeContent() {
                 console.log('Filter button clicked'); // デバッグ用
                 setShowFilter(true);
               }}
-              className="p-2 text-smoky-navy hover:text-salmon-coral transition-colors"
+              className="p-2 text-white hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
               title="フィルター設定"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
               </svg>
-            </button>
-            <button 
-              onClick={() => router.push('/messages')}
-              className="p-2 text-smoky-navy hover:text-salmon-coral transition-colors"
-            >
-              <span className="text-xl">💬</span>
             </button>
             <div className="relative">
               <button 
@@ -339,13 +339,13 @@ function HomeContent() {
                   console.log('Notification button clicked'); // デバッグ用
                   setShowNotifications(true);
                 }}
-                className="p-2 text-smoky-navy hover:text-salmon-coral transition-colors"
+                className="p-2 text-white hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                 title="通知"
               >
                 <span className="text-xl">🔔</span>
               </button>
               {getUnreadCount() > 0 && (
-                <div className="absolute -top-1 -right-1 bg-salmon-coral text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 bg-white text-salmon-coral text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                   {getUnreadCount()}
                 </div>
               )}

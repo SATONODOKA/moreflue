@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const Navigation = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const navItems = [
     { href: '/', label: 'ホーム', icon: '🏠' },
@@ -30,9 +31,9 @@ const Navigation = () => {
               isActive = true;
             } else if (normalizedPathname.startsWith('/project')) {
               // URLパラメータからsourceを確認（ホームからの遷移のみアクティブ）
-              const urlParams = new URLSearchParams(window.location.search);
-              const source = urlParams.get('source');
-              isActive = source === 'home' || (!source && !urlParams.get('tab'));
+              const source = searchParams.get('source');
+              const tab = searchParams.get('tab');
+              isActive = source === 'home' || (!source && !tab);
             }
           } else if (normalizedHref === '/projects') {
             // 案件管理: /projects でアクティブ
@@ -41,9 +42,8 @@ const Navigation = () => {
               isActive = true;
             } else if (normalizedPathname.startsWith('/project')) {
               // URLパラメータからsourceを確認（案件管理からの遷移のみアクティブ）
-              const urlParams = new URLSearchParams(window.location.search);
-              const source = urlParams.get('source');
-              const tab = urlParams.get('tab');
+              const source = searchParams.get('source');
+              const tab = searchParams.get('tab');
               isActive = source === 'scout' || tab === 'scout' || tab === 'inProgress';
             }
           } else if (normalizedHref === '/messages') {
