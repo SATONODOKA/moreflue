@@ -1,257 +1,307 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Bell, HelpCircle, LogOut, Edit, Camera, ChevronRight, Trophy, Clock, CheckCircle } from 'lucide-react';
+import { Settings, Edit, MapPin, Clock, Users, Star, ExternalLink, Camera, Instagram, Wifi, Coffee, Car } from 'lucide-react';
 
-interface UserInfo {
+interface ShopInfo {
   name: string;
-  email: string;
-  company: string;
-  plan: string;
-  avatar: string | null;
-}
-
-interface Stats {
-  totalProjects: number;
-  successRate: number;
-  totalSpent: number;
-  averageEngagement: number;
-}
-
-interface CompletedProject {
-  id: number;
-  title: string;
-  description?: string;
-  budget: string;
-  deadline: string;
-  reach: number;
-  engagement: number;
-  status?: string;
+  category: string;
+  description: string;
+  location: string;
+  hours: string;
+  mainImage: string;
+  amenities: string[];
+  socialLinks: {
+    instagram?: string;
+    website?: string;
+  };
 }
 
 export default function ProfileContent() {
-  const [userInfo] = useState<UserInfo>({
-    name: "田中太郎",
-    email: "tanaka@example.com",
-    company: "株式会社サンプル",
-    plan: "プロプラン",
-    avatar: null
-  });
-
-  const [stats] = useState<Stats>({
-    totalProjects: 24,
-    successRate: 92,
-    totalSpent: 1250000,
-    averageEngagement: 4.3
-  });
-
-  const [activeTab, setActiveTab] = useState<string>('統計');
-  const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([]);
-
-  // 完了済み案件を取得
-  useEffect(() => {
-    try {
-      const projects = JSON.parse(localStorage.getItem('projects') || '[]') as CompletedProject[];
-      const completed = projects.filter(p => p.status === '完了');
-      setCompletedProjects(completed);
-    } catch (error) {
-      console.error('Error loading completed projects:', error);
+  const [shopInfo, setShopInfo] = useState<ShopInfo>({
+    name: "カフェ・ド・パリ",
+    category: "カフェ",
+    description: "創業30年の老舗カフェです。毎朝手作りのパンと、こだわりの自家焙煎コーヒーで、お客様に温かいひとときをご提供しています。Instagramで映える店内と美味しいコーヒーで、多くの方に愛されるお店を目指しています。",
+    location: "渋谷駅から徒歩8分",
+    hours: "8:00-20:00",
+    mainImage: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop&auto=format",
+    amenities: ["WiFi", "コンセント", "駐車場"],
+    socialLinks: {
+      instagram: "https://instagram.com/cafedeparis_shibuya",
+      website: "https://cafedeparis.com"
     }
-  }, []);
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // 編集用の一時データ
+  const [tempShopInfo, setTempShopInfo] = useState(shopInfo);
+
+  // 編集保存
+  const handleSave = () => {
+    setShopInfo(tempShopInfo);
+    setIsEditing(false);
+  };
+
+  // 編集キャンセル
+  const handleCancel = () => {
+    setTempShopInfo(shopInfo);
+    setIsEditing(false);
+  };
+
+  // アメニティアイコンの取得
+  const getAmenityIcon = (amenity: string) => {
+    switch (amenity) {
+      case 'WiFi': return <Wifi size={16} />;
+      case 'コンセント': return <Coffee size={16} />;
+      case '駐車場': return <Car size={16} />;
+      default: return <Star size={16} />;
+    }
+  };
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
+    <div className="min-h-screen">
       {/* ヘッダー */}
-      <header className="text-center py-6">
-        <h1 className="text-2xl font-bold text-tertiary mb-2">マイページ</h1>
-        <p className="text-gray-600 text-sm">アカウント情報と設定</p>
-      </header>
+      <div className="relative">
+        {/* 設定ボタン */}
+        <button
+          onClick={() => setShowSettings(true)}
+          className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+        >
+          <Settings size={20} className="text-gray-700" />
+        </button>
 
-      {/* タブ切り替え */}
-      <div className="flex space-x-2 overflow-x-auto">
-        {['統計', '実績', '設定'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {/* メイン画像 */}
+        <div className="relative h-64 bg-gray-200 overflow-hidden">
+          <img
+            src={shopInfo.mainImage}
+            alt={shopInfo.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/20" />
+          
+          {/* 編集ボタン */}
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="absolute bottom-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+            >
+              <Edit size={16} className="text-gray-700" />
+            </button>
+          )}
+        </div>
+
+        {/* 店舗情報オーバーレイ */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent text-white">
+          <div className="flex items-end justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">{shopInfo.name}</h1>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                  {shopInfo.category}
+                </span>
+                <div className="flex items-center gap-1">
+                  <MapPin size={14} />
+                  <span>{shopInfo.location}</span>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
       </div>
 
-      {/* 統計タブ */}
-      {activeTab === '統計' && (
-        <>
-          {/* プロフィール情報 */}
-          <section className="card">
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="relative">
-                <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
-                  {userInfo.avatar ? (
-                    <img src={userInfo.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <span className="text-2xl font-bold text-tertiary">
-                      {userInfo.name.charAt(0)}
-                    </span>
-                  )}
+      {/* 店舗詳細 */}
+      <div className="p-4 space-y-4">
+        {/* 編集モード */}
+        {isEditing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <h3 className="font-semibold text-blue-900 mb-3">店舗情報を編集</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">店舗名</label>
+                <input
+                  type="text"
+                  value={tempShopInfo.name}
+                  onChange={(e) => setTempShopInfo({...tempShopInfo, name: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリー</label>
+                <input
+                  type="text"
+                  value={tempShopInfo.category}
+                  onChange={(e) => setTempShopInfo({...tempShopInfo, category: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">店舗説明</label>
+                <textarea
+                  value={tempShopInfo.description}
+                  onChange={(e) => setTempShopInfo({...tempShopInfo, description: e.target.value})}
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">アクセス</label>
+                  <input
+                    type="text"
+                    value={tempShopInfo.location}
+                    onChange={(e) => setTempShopInfo({...tempShopInfo, location: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
                 </div>
-                <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark transition-colors">
-                  <Camera size={16} />
-                </button>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">営業時間</label>
+                  <input
+                    type="text"
+                    value={tempShopInfo.hours}
+                    onChange={(e) => setTempShopInfo({...tempShopInfo, hours: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
               </div>
-              
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-tertiary">{userInfo.name}</h2>
-                <p className="text-gray-600 text-sm">{userInfo.email}</p>
-                <p className="text-gray-600 text-sm">{userInfo.company}</p>
-                <span className="inline-block bg-accent text-white text-xs px-2 py-1 rounded-full mt-2">
-                  {userInfo.plan}
-                </span>
-              </div>
-              
-              <button className="p-2 hover:bg-gray-100 rounded">
-                <Edit size={20} className="text-gray-500" />
+            </div>
+            
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={handleSave}
+                className="flex-1 bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors"
+              >
+                保存
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                キャンセル
               </button>
             </div>
-          </section>
-
-          {/* 統計情報 */}
-          <section className="card">
-            <h2 className="text-lg font-semibold text-tertiary mb-4">活動実績</h2>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-primary text-xl font-bold">{stats.totalProjects}</div>
-                <div className="text-gray-600 text-xs mt-1">総案件数</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary text-xl font-bold">{stats.successRate}%</div>
-                <div className="text-gray-600 text-xs mt-1">成功率</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary text-xl font-bold">¥{(stats.totalSpent / 10000).toFixed(0)}万</div>
-                <div className="text-gray-600 text-xs mt-1">総支出額</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary text-xl font-bold">{stats.averageEngagement}%</div>
-                <div className="text-gray-600 text-xs mt-1">平均エンゲージメント</div>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* 実績タブ */}
-      {activeTab === '実績' && (
-        <section className="space-y-3">
-          <div className="card">
-            <div className="flex items-center space-x-2 mb-4">
-              <Trophy className="text-primary" size={24} />
-              <h2 className="text-lg font-semibold text-tertiary">完了案件</h2>
-            </div>
-            
-            {completedProjects.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">まだ完了した案件がありません</p>
-            ) : (
-              <div className="space-y-3">
-                {completedProjects.map((project) => (
-                  <div key={project.id} className="border border-gray-200 rounded-xl p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-tertiary text-sm">{project.title}</h3>
-                        <p className="text-gray-600 text-xs mt-1">
-                          {project.description?.slice(0, 50)}...
-                        </p>
-                      </div>
-                      <CheckCircle className="text-green-500" size={20} />
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span className="flex items-center">
-                        <Clock size={12} className="mr-1" />
-                        {project.deadline}
-                      </span>
-                      <span className="font-medium text-primary">
-                        {project.budget}
-                      </span>
-                    </div>
-                    
-                    {project.reach > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-gray-500">リーチ:</span>
-                            <span className="font-medium ml-1">{project.reach.toLocaleString()}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">エンゲージ:</span>
-                            <span className="font-medium ml-1">{project.engagement}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        </section>
-      )}
+        )}
 
-      {/* 設定タブ */}
-      {activeTab === '設定' && (
-        <section className="space-y-3">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-tertiary mb-4">設定</h2>
+        {/* 店舗ストーリー */}
+        <section className="card">
+          <h2 className="text-lg font-semibold text-tertiary mb-3">店舗ストーリー</h2>
+          <p className="text-gray-700 text-sm leading-relaxed">{shopInfo.description}</p>
+        </section>
+
+        {/* 詳細情報 */}
+        <section className="card">
+          <h2 className="text-lg font-semibold text-tertiary mb-3">詳細情報</h2>
           
           <div className="space-y-3">
-            {[
-              { icon: Settings, label: "アカウント設定", description: "基本情報の変更" },
-              { icon: Bell, label: "通知設定", description: "プッシュ通知の管理" },
-              { icon: HelpCircle, label: "ヘルプ・サポート", description: "よくある質問" }
-            ].map((item, index) => (
-              <button key={index} className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
-                <div className="flex items-center space-x-3">
-                  <item.icon className="text-gray-500" size={20} />
-                  <div className="text-left">
-                    <p className="font-medium text-tertiary text-sm">{item.label}</p>
-                    <p className="text-gray-500 text-xs">{item.description}</p>
-                  </div>
-                </div>
-                <ChevronRight className="text-gray-400" size={16} />
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin size={16} className="text-gray-500" />
+              <span className="text-gray-700">アクセス: {shopInfo.location}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm">
+              <Clock size={16} className="text-gray-500" />
+              <span className="text-gray-700">営業時間: {shopInfo.hours}</span>
+            </div>
+            
+            {/* アメニティ */}
+            <div>
+              <div className="flex items-center gap-2 text-sm mb-2">
+                <Users size={16} className="text-gray-500" />
+                <span className="text-gray-700">設備・サービス</span>
+              </div>
+              <div className="flex gap-2 ml-6">
+                {shopInfo.amenities.map((amenity, index) => (
+                  <span
+                    key={index}
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                  >
+                    {getAmenityIcon(amenity)}
+                    {amenity}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {/* SNSリンク */}
+            <div className="pt-2 border-t border-gray-100">
+              <div className="flex gap-3">
+                {shopInfo.socialLinks.instagram && (
+                  <button
+                    onClick={() => window.open(shopInfo.socialLinks.instagram, '_blank')}
+                    className="flex items-center gap-2 px-3 py-2 bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition-colors"
+                  >
+                    <Instagram size={16} />
+                    <span className="text-sm">Instagram</span>
+                    <ExternalLink size={12} />
+                  </button>
+                )}
+                
+                {shopInfo.socialLinks.website && (
+                  <button
+                    onClick={() => window.open(shopInfo.socialLinks.website, '_blank')}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <ExternalLink size={16} />
+                    <span className="text-sm">ウェブサイト</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* 設定モーダル */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-tertiary">設定</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                ✕
               </button>
-            ))}
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              <div className="space-y-2">
+                <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="font-medium text-sm">アカウント設定</div>
+                  <div className="text-gray-500 text-xs">基本情報の変更</div>
+                </button>
+                
+                <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="font-medium text-sm">通知設定</div>
+                  <div className="text-gray-500 text-xs">プッシュ通知の管理</div>
+                </button>
+                
+                <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="font-medium text-sm">プラン・請求</div>
+                  <div className="text-gray-500 text-xs">サブスクリプションの管理</div>
+                </button>
+                
+                <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="font-medium text-sm">ヘルプ・サポート</div>
+                  <div className="text-gray-500 text-xs">よくある質問・お問い合わせ</div>
+                </button>
+                
+                <button className="w-full text-left p-3 hover:bg-red-50 text-red-600 rounded-lg transition-colors">
+                  <div className="font-medium text-sm">ログアウト</div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* プラン情報 */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-tertiary mb-4">プラン情報</h2>
-          
-          <div className="bg-gradient-to-r from-primary to-accent p-4 rounded-xl text-white mb-4">
-            <h3 className="font-semibold mb-2">{userInfo.plan}</h3>
-            <p className="text-sm opacity-90">無制限の案件作成・高度な分析機能</p>
-            <p className="text-sm opacity-90">月額 ¥9,800</p>
-          </div>
-          
-          <button className="button-secondary w-full">
-            プランを変更
-          </button>
-        </div>
-
-        {/* ログアウト */}
-        <div className="card">
-          <button className="w-full flex items-center justify-center space-x-2 p-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-            <LogOut size={20} />
-            <span className="font-medium">ログアウト</span>
-          </button>
-        </div>
-      </section>
       )}
     </div>
   );
