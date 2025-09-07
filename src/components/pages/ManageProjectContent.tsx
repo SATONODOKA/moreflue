@@ -61,21 +61,120 @@ export default function ManageProjectContent() {
       try {
         const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
         
-        // 数値の整合性を確保：実際のデータに基づいて計算
-        const projectsWithMockData = storedProjects.map((project) => {
-          // 公募の場合の応募数（見送りした人を除く）
-          const currentApplicants = applicants.filter(a => a.status !== 'rejected').length;
-          // チャット数はグローバルチャットから取得
-          const currentChats = chatPreviews.length;
-          
-          return {
-            ...project,
-            applicationsCount: project.distributionType === 'public' ? currentApplicants : 0,
-            matchesCount: currentChats
-          };
-        });
+        // ユーザー作成案件とダミーデータを分離
+        const userProjects = storedProjects.filter((p: Project) => 
+          p.id < 100000 && // ダミーデータのIDは100000以上
+          p.title !== 'あ' // 古いダミーデータを除外
+        );
         
-        setProjects(projectsWithMockData);
+        const hasDummyData = storedProjects.some((p: Project) => 
+          p.title && p.title.includes('パンケーキ')
+        );
+        
+        if (!hasDummyData) {
+          // ダミーデータを追加（ユーザーデータは保持）
+          const mockProjects: Project[] = [
+            {
+              id: 1,
+              title: "新商品パンケーキのPRキャンペーン",
+              status: "公募中",
+              budget: "¥15,000",
+              rewardRate: "5%",
+              deadline: "2025-01-30",
+              description: "新メニューのふわふわパンケーキをSNSでPRしてくださるインフルエンサーを募集中です！",
+              distributionType: 'public',
+              createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2日前
+              applicationsCount: 3,
+              matchesCount: 1
+            },
+            {
+              id: 2,
+              title: "季節限定スイーツの投稿キャンペーン",
+              status: "公募中",
+              budget: "¥12,000",
+              rewardRate: "3%",
+              deadline: "2025-02-15",
+              description: "春の新作スイーツをInstagramストーリーズでご紹介ください。",
+              distributionType: 'public',
+              createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1日前
+              applicationsCount: 5,
+              matchesCount: 2
+            },
+            {
+              id: 3,
+              title: "カフェの新店舗オープン告知",
+              status: "進行中",
+              budget: "¥20,000",
+              rewardRate: "7%",
+              deadline: "2025-02-05",
+              description: "渋谷の新店舗オープンを多くの方に知ってもらいたいです。",
+              distributionType: 'scout',
+              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3日前
+              selectedInfluencers: [1, 2, 3],
+              matchesCount: 2
+            },
+            {
+              id: 4,
+              title: "ランチメニューのグルメレビュー",
+              status: "公募中",
+              budget: "¥8,000",
+              rewardRate: "4%",
+              deadline: "2025-01-25",
+              description: "平日ランチメニューの魅力をTikTokで発信してくれる方を探しています。",
+              distributionType: 'public',
+              createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4日前
+              applicationsCount: 2,
+              matchesCount: 0
+            },
+            {
+              id: 5,
+              title: "コーヒー豆の紹介キャンペーン",
+              status: "進行中",
+              budget: "¥25,000",
+              rewardRate: "6%",
+              deadline: "2025-02-20",
+              description: "こだわりのコーヒー豆の魅力をYouTubeショート動画で紹介してください。",
+              distributionType: 'scout',
+              createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5日前
+              selectedInfluencers: [4, 5],
+              matchesCount: 1
+            },
+            {
+              id: 6,
+              title: "新作ドリンクのインスタ投稿",
+              status: "進行中", 
+              budget: "¥18,000",
+              rewardRate: "5%",
+              deadline: "2025-02-10",
+              description: "新発売のフルーツスムージーをおしゃれに撮影してInstagramに投稿してください。",
+              distributionType: 'scout',
+              createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6日前
+              selectedInfluencers: [1, 3, 5],
+              matchesCount: 3
+            }
+          ];
+          
+          // ユーザー作成案件とダミーデータを統合
+          const combinedProjects = [...userProjects, ...mockProjects];
+          localStorage.setItem('projects', JSON.stringify(combinedProjects));
+          setProjects(combinedProjects);
+        } else {
+          // 数値の整合性を確保：実際のデータに基づいて計算
+          const projectsWithMockData = storedProjects.map((project) => {
+            // 公募の場合の応募数（見送りした人を除く）
+            const currentApplicants = applicants.filter(a => a.status !== 'rejected').length;
+            // チャット数はグローバルチャットから取得
+            const currentChats = chatPreviews.length;
+            
+            return {
+              ...project,
+              applicationsCount: project.distributionType === 'public' ? currentApplicants : 0,
+              matchesCount: currentChats
+            };
+          });
+          
+          setProjects(projectsWithMockData);
+        }
       } catch (error) {
         console.error('プロジェクトの読み込みに失敗しました:', error);
         setProjects([]);
@@ -84,53 +183,307 @@ export default function ManageProjectContent() {
 
     loadProjects();
     
-    // 定期的に更新
-    const interval = setInterval(loadProjects, 5000);
-    return () => clearInterval(interval);
+    // localStorage変更時の更新イベントリスナー
+    const handleStorageChange = () => {
+      loadProjects();
+    };
+    
+    // 案件作成からのイベントリスナー
+    const handleProjectCreated = () => {
+      setTimeout(loadProjects, 100); // 少し遅延して確実に反映
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('projectCreated', handleProjectCreated);
+    
+    // 定期的に更新（バックアップとして）
+    const interval = setInterval(loadProjects, 3000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('projectCreated', handleProjectCreated);
+      clearInterval(interval);
+    };
   }, [applicants, chatPreviews]);
 
   // フィルタリングされた案件リスト
   const filteredProjects = projects.filter(project => {
     if (activeTab === 'public') {
+      // 公募タブ：distributionTypeがpublicまたはstatusが公募中のものを表示
       return project.distributionType === 'public' || project.status === '公募中';
     } else {
+      // スカウトタブ：distributionTypeがscoutまたはstatusが進行中のものを表示
       return project.distributionType === 'scout' || project.status === '進行中';
     }
   });
 
+  // 強制的にダミーデータをリセット（開発時）
+  const forceResetData = () => {
+    localStorage.clear();
+    
+    // 新しいダミーデータを直接設定
+    const mockProjects: Project[] = [
+      {
+        id: 1,
+        title: "新商品パンケーキのPRキャンペーン",
+        status: "公募中",
+        budget: "¥15,000",
+        rewardRate: "5%",
+        deadline: "2025-01-30",
+        description: "新メニューのふわふわパンケーキをSNSでPRしてくださるインフルエンサーを募集中です！",
+        distributionType: 'public',
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        applicationsCount: 3,
+        matchesCount: 1
+      },
+      {
+        id: 2,
+        title: "季節限定スイーツの投稿キャンペーン",
+        status: "公募中",
+        budget: "¥12,000",
+        rewardRate: "3%",
+        deadline: "2025-02-15",
+        description: "春の新作スイーツをInstagramストーリーズでご紹介ください。",
+        distributionType: 'public',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        applicationsCount: 5,
+        matchesCount: 2
+      },
+      {
+        id: 3,
+        title: "カフェの新店舗オープン告知",
+        status: "進行中",
+        budget: "¥20,000",
+        rewardRate: "7%",
+        deadline: "2025-02-05",
+        description: "渋谷の新店舗オープンを多くの方に知ってもらいたいです。",
+        distributionType: 'scout',
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        selectedInfluencers: [1, 2, 3],
+        matchesCount: 2
+      },
+      {
+        id: 4,
+        title: "ランチメニューのグルメレビュー",
+        status: "公募中",
+        budget: "¥8,000",
+        rewardRate: "4%",
+        deadline: "2025-01-25",
+        description: "平日ランチメニューの魅力をTikTokで発信してくれる方を探しています。",
+        distributionType: 'public',
+        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        applicationsCount: 2,
+        matchesCount: 0
+      },
+      {
+        id: 5,
+        title: "コーヒー豆の紹介キャンペーン",
+        status: "進行中",
+        budget: "¥25,000",
+        rewardRate: "6%",
+        deadline: "2025-02-20",
+        description: "こだわりのコーヒー豆の魅力をYouTubeショート動画で紹介してください。",
+        distributionType: 'scout',
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        selectedInfluencers: [4, 5],
+        matchesCount: 1
+      },
+      {
+        id: 6,
+        title: "新作ドリンクのインスタ投稿",
+        status: "進行中", 
+        budget: "¥18,000",
+        rewardRate: "5%",
+        deadline: "2025-02-10",
+        description: "新発売のフルーツスムージーをおしゃれに撮影してInstagramに投稿してください。",
+        distributionType: 'scout',
+        createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+        selectedInfluencers: [1, 3, 5],
+        matchesCount: 3
+      }
+    ];
+    
+    localStorage.setItem('projects', JSON.stringify(mockProjects));
+    setProjects(mockProjects);
+    
+    // チャットデータも設定
+    const initialChats = [
+      {
+        id: 1,
+        influencerName: "鈴木健太",
+        influencerUsername: "@kenta_tokyo_eats",
+        lastMessage: "パンケーキの撮影、明日の午後2時頃お伺いします！",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 2,
+        projectTitle: "新商品パンケーキのPRキャンペーン"
+      },
+      {
+        id: 2,
+        influencerName: "高橋まい",
+        influencerUsername: "@mai_sweets_tokyo",
+        lastMessage: "新店舗の内装、とても素敵ですね！早速投稿させていただきます。",
+        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 1,
+        projectTitle: "カフェの新店舗オープン告知"
+      },
+      {
+        id: 3,
+        influencerName: "田中美咲",
+        influencerUsername: "@misaki_foodie",
+        lastMessage: "コーヒー豆の香りがとても素晴らしいです。動画でしっかり魅力を伝えますね！",
+        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 0,
+        projectTitle: "コーヒー豆の紹介キャンペーン"
+      },
+      {
+        id: 4,
+        influencerName: "佐藤ゆき",
+        influencerUsername: "@yukicafe_life",
+        lastMessage: "フルーツスムージー、色合いがとてもフォトジェニックで素敵です✨",
+        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 3,
+        projectTitle: "新作ドリンクのインスタ投稿"
+      }
+    ];
+    setChatPreviews(initialChats);
+    localStorage.setItem('globalChats', JSON.stringify(initialChats));
+  };
+
+  // 初期データ設定（ユーザー作成案件は保持）
+  useEffect(() => {
+    const stored = localStorage.getItem('projects');
+    
+    // データが存在しないか、古いダミーデータ（"あ"など）の場合のみリセット
+    if (!stored || stored.includes('"title":"あ"') || stored === '[]') {
+      forceResetData();
+      return;
+    }
+    
+    // 既存データがある場合は、それが有効かチェック
+    try {
+      const projects = JSON.parse(stored);
+      // 最低限のダミーデータが存在するかチェック
+      const hasValidData = projects.some((p: any) => 
+        p.title && p.title.includes('パンケーキ')
+      );
+      
+      if (!hasValidData) {
+        // 既存のユーザー作成案件を保持しつつダミーデータを追加
+        const userProjects = projects.filter((p: any) => 
+          !p.title.includes('パンケーキ') && 
+          !p.title.includes('スイーツ') && 
+          !p.title.includes('カフェ') &&
+          !p.title.includes('ランチメニュー') &&
+          !p.title.includes('コーヒー豆') &&
+          !p.title.includes('ドリンク')
+        );
+        
+        // ダミーデータを追加
+        const dummyData = [
+          {
+            id: 100001,
+            title: "新商品パンケーキのPRキャンペーン",
+            status: "公募中",
+            budget: "¥15,000",
+            rewardRate: "5%",
+            deadline: "2025-01-30",
+            description: "新メニューのふわふわパンケーキをSNSでPRしてくださるインフルエンサーを募集中です！",
+            distributionType: 'public',
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            applicationsCount: 3,
+            matchesCount: 1
+          },
+          {
+            id: 100002,
+            title: "季節限定スイーツの投稿キャンペーン",
+            status: "公募中",
+            budget: "¥12,000",
+            rewardRate: "3%",
+            deadline: "2025-02-15",
+            description: "春の新作スイーツをInstagramストーリーズでご紹介ください。",
+            distributionType: 'public',
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            applicationsCount: 5,
+            matchesCount: 2
+          },
+          {
+            id: 100003,
+            title: "カフェの新店舗オープン告知",
+            status: "進行中",
+            budget: "¥20,000",
+            rewardRate: "7%",
+            deadline: "2025-02-05",
+            description: "渋谷の新店舗オープンを多くの方に知ってもらいたいです。",
+            distributionType: 'scout',
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            selectedInfluencers: [1, 2, 3],
+            matchesCount: 2
+          }
+        ];
+        
+        const combinedData = [...userProjects, ...dummyData];
+        localStorage.setItem('projects', JSON.stringify(combinedData));
+        setProjects(combinedData);
+      }
+    } catch (e) {
+      forceResetData();
+    }
+  }, []);
+
   // モックデータ初期化
   useEffect(() => {
+    
     // モック応募者データを初期化
     setApplicants([
       {
         id: 1,
         name: "田中美咲",
-        username: "@misaki_tanaka",
-        followers: 25000,
-        engagement: 4.2,
+        username: "@misaki_foodie",
+        followers: 28500,
+        engagement: 4.8,
         status: 'pending',
-        appliedDate: "2024-01-20",
-        matchScore: 92
+        appliedDate: "2025-01-05",
+        matchScore: 94
       },
       {
         id: 2,
         name: "佐藤ゆき", 
-        username: "@yuki_lifestyle",
-        followers: 18500,
-        engagement: 5.1,
+        username: "@yukicafe_life",
+        followers: 21300,
+        engagement: 5.2,
         status: 'pending',
-        appliedDate: "2024-01-21",
-        matchScore: 89
+        appliedDate: "2025-01-06",
+        matchScore: 91
       },
       {
         id: 3,
-        name: "山田花子",
-        username: "@hanako_eats", 
-        followers: 32000,
-        engagement: 3.8,
-        status: 'approved',
-        appliedDate: "2024-01-19",
+        name: "高橋まい",
+        username: "@mai_sweets_tokyo", 
+        followers: 35200,
+        engagement: 4.1,
+        status: 'pending',
+        appliedDate: "2025-01-04",
+        matchScore: 89
+      },
+      {
+        id: 4,
+        name: "伊藤かな",
+        username: "@kana_gourmet",
+        followers: 19800,
+        engagement: 6.1,
+        status: 'pending',
+        appliedDate: "2025-01-07",
         matchScore: 87
+      },
+      {
+        id: 5,
+        name: "鈴木健太",
+        username: "@kenta_tokyo_eats",
+        followers: 42600,
+        engagement: 3.9,
+        status: 'approved',
+        appliedDate: "2025-01-03",
+        matchScore: 95
       }
     ]);
 
@@ -141,21 +494,30 @@ export default function ManageProjectContent() {
       const initialChats: ChatPreview[] = [
         {
           id: 1,
-          influencerName: "山田花子",
-          influencerUsername: "@hanako_eats",
-          lastMessage: "ありがとうございます！詳細について確認させてください。",
-          timestamp: "2024-01-22T14:30:00",
+          influencerName: "鈴木健太",
+          influencerUsername: "@kenta_tokyo_eats",
+          lastMessage: "パンケーキの撮影、明日の午後2時頃お伺いします！",
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2時間前
           unreadCount: 2,
-          projectTitle: "新商品プロモーション"
+          projectTitle: "新商品パンケーキのPRキャンペーン"
         },
         {
           id: 2,
           influencerName: "高橋まい",
-          influencerUsername: "@mai_sweets",
-          lastMessage: "投稿の件、承知いたしました。",
-          timestamp: "2024-01-22T10:15:00",
+          influencerUsername: "@mai_sweets_tokyo",
+          lastMessage: "スイーツの投稿、ストーリーズでもシェアしますね✨",
+          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5時間前
           unreadCount: 0,
-          projectTitle: "季節限定メニュー"
+          projectTitle: "季節限定スイーツの投稿キャンペーン"
+        },
+        {
+          id: 3,
+          influencerName: "田中美咲",
+          influencerUsername: "@misaki_foodie",
+          lastMessage: "新店舗の内装、とても素敵ですね！早速投稿させていただきます。",
+          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1日前
+          unreadCount: 1,
+          projectTitle: "カフェの新店舗オープン告知"
         }
       ];
       setChatPreviews(initialChats);
@@ -272,15 +634,15 @@ export default function ManageProjectContent() {
                     <h3 className="font-semibold text-tertiary">{project.title}</h3>
                     {/* 通知バッジ */}
                     {activeTab === 'public' && project.applicationsCount! > 0 && (
-                      <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <span>{project.applicationsCount}</span>
-                        <span className="text-[10px] opacity-80">応募</span>
+                      <div className="bg-red-500 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                        <span className="font-semibold">{project.applicationsCount}</span>
+                        <span className="text-[11px]">応募</span>
                       </div>
                     )}
                     {project.matchesCount! > 0 && (
-                      <div className="bg-primary text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <span>{project.matchesCount}</span>
-                        <span className="text-[10px] opacity-80">チャット</span>
+                      <div className="bg-primary text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                        <span className="font-semibold">{project.matchesCount}</span>
+                        <span className="text-[11px]">チャット</span>
                       </div>
                     )}
                   </div>
@@ -456,12 +818,13 @@ export default function ManageProjectContent() {
               {/* スカウト一覧セクション（スカウトの場合） */}
               {selectedProject.distributionType === 'scout' && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-3">送付済み一覧 (3件)</h3>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3">送付済み一覧 (4件)</h3>
                   <div className="space-y-2">
                     {[
-                      { id: 1, name: "田中美咲", username: "@misaki_tanaka", followers: 25000, engagement: 4.2 },
-                      { id: 2, name: "佐藤ゆき", username: "@yuki_lifestyle", followers: 18500, engagement: 5.1 },
-                      { id: 3, name: "山田花子", username: "@hanako_eats", followers: 32000, engagement: 3.8 }
+                      { id: 1, name: "田中美咲", username: "@misaki_foodie", followers: 28500, engagement: 4.8 },
+                      { id: 2, name: "佐藤ゆき", username: "@yukicafe_life", followers: 21300, engagement: 5.2 },
+                      { id: 3, name: "高橋まい", username: "@mai_sweets_tokyo", followers: 35200, engagement: 4.1 },
+                      { id: 4, name: "鈴木健太", username: "@kenta_tokyo_eats", followers: 42600, engagement: 3.9 }
                     ].map((influencer) => (
                       <div key={influencer.id} className="border rounded-lg p-2.5 bg-gray-50">
                         <div className="flex items-center justify-between">
@@ -580,9 +943,10 @@ export default function ManageProjectContent() {
               {selectedProject.distributionType === 'scout' ? (
                 // スカウト：シンプルなプロフィール一覧
                 [
-                  { id: 1, name: "田中美咲", username: "@misaki_tanaka", followers: 25000, engagement: 4.2 },
-                  { id: 2, name: "佐藤ゆき", username: "@yuki_lifestyle", followers: 18500, engagement: 5.1 },
-                  { id: 3, name: "山田花子", username: "@hanako_eats", followers: 32000, engagement: 3.8 }
+                  { id: 1, name: "田中美咲", username: "@misaki_foodie", followers: 28500, engagement: 4.8 },
+                  { id: 2, name: "佐藤ゆき", username: "@yukicafe_life", followers: 21300, engagement: 5.2 },
+                  { id: 3, name: "高橋まい", username: "@mai_sweets_tokyo", followers: 35200, engagement: 4.1 },
+                  { id: 4, name: "鈴木健太", username: "@kenta_tokyo_eats", followers: 42600, engagement: 3.9 }
                 ].map((influencer) => (
                   <div key={influencer.id} className="border rounded-xl p-3">
                     <div className="flex items-center gap-2 mb-2">

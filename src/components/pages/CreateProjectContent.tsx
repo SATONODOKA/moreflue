@@ -203,26 +203,32 @@ export default function CreateProjectContent() {
 
   // 案件を保存して案件管理タブに遷移
   const saveProjectAndRedirect = (status: string) => {
+    const distributionType = status === '公募中' ? 'public' : 'scout';
+    
     const newProject = {
       id: Date.now(),
       title: formData.title,
-      description: formData.storyText,
       status: status,
       budget: `¥${formData.paymentAmount.toLocaleString()}`,
       rewardRate: `${formData.rewardRate}%`,
-      expectedRevenue: formData.unitPrice * 100,
+      deadline: formData.endDate,
+      description: formData.storyText,
+      distributionType: distributionType,
+      selectedInfluencers: distributionType === 'scout' ? selectedInfluencers : undefined,
       reach: 0,
       engagement: 0,
-      deadline: formData.endDate,
-      distributionType: status === '公募中' ? 'public' : 'scout',
-      selectedInfluencers: selectedInfluencers,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      applicationsCount: distributionType === 'public' ? 0 : undefined,
+      matchesCount: 0
     };
 
     const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
     existingProjects.unshift(newProject);
     localStorage.setItem('projects', JSON.stringify(existingProjects));
 
+    // 案件管理画面にデータ更新を通知
+    window.dispatchEvent(new CustomEvent('projectCreated', { detail: newProject }));
+    
     // 案件管理タブに移動
     window.dispatchEvent(new CustomEvent('switchToManageTab'));
   };
