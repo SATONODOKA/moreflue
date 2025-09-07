@@ -1,665 +1,774 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Edit, MoreVertical, CheckCircle, Trash2, PlayCircle, Users, MessageCircle, Send } from 'lucide-react';
+import { Search, Filter, Eye, Edit, MoreVertical, CheckCircle, Trash2, PlayCircle, Users, MessageCircle, Send, FileText, Bell, ChevronRight, Clock, UserCheck, UserX } from 'lucide-react';
 
 interface Project {
   id: number;
   title: string;
-  influencer?: string;
   status: string;
   budget: string;
-  reach: number;
-  engagement: number;
+  rewardRate: string;
   deadline: string;
-  description?: string;
-  rewardRate?: string;
+  description: string;
+  distributionType: 'public' | 'scout';
+  selectedInfluencers?: number[];
+  reach?: number;
+  engagement?: number;
+  createdAt: string;
+  applicationsCount?: number;
+  matchesCount?: number;
 }
 
-interface Candidate {
+interface Applicant {
   id: number;
   name: string;
   username: string;
   followers: number;
   engagement: number;
-  status: string;
-  sentDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedDate: string;
+  avatar?: string;
+  matchScore?: number;
 }
 
-interface MatchedUser {
+interface ChatPreview {
   id: number;
-  name: string;
-  username: string;
-  avatar: string | null;
+  influencerName: string;
+  influencerUsername: string;
   lastMessage: string;
   timestamp: string;
-}
-
-interface ChatMessage {
-  id: number;
-  sender: 'user' | 'influencer';
-  message: string;
-  timestamp: string;
+  unreadCount: number;
+  avatar?: string;
 }
 
 export default function ManageProjectContent() {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 1,
-      title: "新商品プロモーション",
-      influencer: "田中美咲",
-      status: "進行中",
-      budget: "50,000円",
-      reach: 15000,
-      engagement: 4.8,
-      deadline: "2024-01-25"
-    },
-    {
-      id: 2,
-      title: "季節限定メニュー",
-      influencer: "佐藤ゆき",
-      status: "完了",
-      budget: "75,000円",
-      reach: 22000,
-      engagement: 5.2,
-      deadline: "2024-01-15"
-    },
-    {
-      id: 3,
-      title: "店舗オープン告知",
-      influencer: "山田花子",
-      status: "進行中",
-      budget: "30,000円",
-      reach: 18500,
-      engagement: 3.9,
-      deadline: "2024-01-30"
-    }
-  ]);
-
-  const [filter, setFilter] = useState<string>('下書き');
-  const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'public' | 'scout'>('public');
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [showCandidatesModal, setShowCandidatesModal] = useState<boolean>(false);
-  const [newMessage, setNewMessage] = useState<string>('');
+  const [showProjectDetail, setShowProjectDetail] = useState(false);
+  const [showApplicantsList, setShowApplicantsList] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
+  const [showChatDetail, setShowChatDetail] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [showAllApplicants, setShowAllApplicants] = useState(false);
 
   // localStorageから案件を読み込み
   useEffect(() => {
     const loadProjects = () => {
       try {
         const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
-        if (storedProjects.length > 0) {
-          // 既存のサンプルデータと結合
-          const defaultProjects: Project[] = [
-            {
-              id: 1,
-              title: "新商品プロモーション",
-              influencer: "田中美咲",
-              status: "進行中",
-              budget: "50,000円",
-              reach: 15000,
-              engagement: 4.8,
-              deadline: "2024-01-25"
-            },
-            {
-              id: 2,
-              title: "季節限定メニュー",
-              influencer: "佐藤ゆき",
-              status: "完了",
-              budget: "75,000円",
-              reach: 22000,
-              engagement: 5.2,
-              deadline: "2024-01-15"
-            },
-            {
-              id: 3,
-              title: "店舗オープン告知",
-              influencer: "山田花子",
-              status: "進行中",
-              budget: "30,000円",
-              reach: 18500,
-              engagement: 3.9,
-              deadline: "2024-01-30"
-            }
-          ];
+        
+        // 数値の整合性を確保：実際のデータに基づいて計算
+        const projectsWithMockData = storedProjects.map((project) => {
+          // 公募の場合の応募数（見送りした人を除く）
+          const currentApplicants = applicants.filter(a => a.status !== 'rejected').length;
+          // チャット数はグローバルチャットから取得
+          const currentChats = chatPreviews.length;
           
-          // 新しく作成された案件を上に表示
-          setProjects([...storedProjects, ...defaultProjects]);
-        }
+          return {
+            ...project,
+            applicationsCount: project.distributionType === 'public' ? currentApplicants : 0,
+            matchesCount: currentChats
+          };
+        });
+        
+        setProjects(projectsWithMockData);
       } catch (error) {
-        console.error('Error loading projects from localStorage:', error);
+        console.error('プロジェクトの読み込みに失敗しました:', error);
+        setProjects([]);
       }
     };
 
     loadProjects();
-
-    // ページが表示されるたびに再読み込み
-    const handleFocus = () => loadProjects();
-    window.addEventListener('focus', handleFocus);
     
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+    // 定期的に更新
+    const interval = setInterval(loadProjects, 5000);
+    return () => clearInterval(interval);
+  }, [applicants, chatPreviews]);
 
-  const handleCompleteProject = (projectId: number) => {
-    setSelectedProjectId(projectId);
-    setShowCompleteModal(true);
-  };
-
-  const confirmCompleteProject = () => {
-    if (selectedProjectId === null) return;
-    
-    // 案件を完了に変更
-    const updatedProjects = projects.map(project => 
-      project.id === selectedProjectId 
-        ? { ...project, status: '完了' }
-        : project
-    );
-    setProjects(updatedProjects);
-    
-    try {
-      // localStorageも更新
-      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
-      const updatedStoredProjects = storedProjects.map(project => 
-        project.id === selectedProjectId 
-          ? { ...project, status: '完了' }
-          : project
-      );
-      localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
-    } catch (error) {
-      console.error('Error updating localStorage:', error);
-    }
-    
-    setShowCompleteModal(false);
-    setSelectedProjectId(null);
-  };
-
-  const handleDeleteProject = (projectId: number) => {
-    setSelectedProjectId(projectId);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteProject = () => {
-    if (selectedProjectId === null) return;
-    
-    // 案件を削除
-    const updatedProjects = projects.filter(project => project.id !== selectedProjectId);
-    setProjects(updatedProjects);
-    
-    try {
-      // localStorageも更新
-      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
-      const updatedStoredProjects = storedProjects.filter(project => project.id !== selectedProjectId);
-      localStorage.setItem('projects', JSON.stringify(updatedStoredProjects));
-    } catch (error) {
-      console.error('Error updating localStorage:', error);
-    }
-    
-    setShowDeleteModal(false);
-    setSelectedProjectId(null);
-  };
-
-  const handleResumeEdit = (project: Project) => {
-    // 編集再開のロジック（後で実装）
-    console.log('編集再開:', project);
-    alert('編集再開機能は後で実装予定です');
-  };
-
-  const handleShowDetail = (project: Project) => {
-    setSelectedProject(project);
-    setShowDetailModal(true);
-  };
-
-  const handleShowCandidates = () => {
-    setShowCandidatesModal(true);
-  };
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    // メッセージ送信のロジック（後で実装）
-    console.log('メッセージ送信:', newMessage);
-    setNewMessage('');
-  };
-
-  // サンプル候補者データ
-  const candidates: Candidate[] = [
-    {
-      id: 1,
-      name: '田中美咲',
-      username: '@misaki_tanaka',
-      followers: 25000,
-      engagement: 4.8,
-      status: 'pending',
-      sentDate: '2024-01-20'
-    },
-    {
-      id: 2,
-      name: '佐藤ゆき',
-      username: '@yuki_sato',
-      followers: 18500,
-      engagement: 5.2,
-      status: 'pending',
-      sentDate: '2024-01-19'
-    }
-  ];
-
-  // サンプルマッチ済みユーザー
-  const matchedUsers: MatchedUser[] = [
-    {
-      id: 1,
-      name: '山田花子',
-      username: '@hanako_yamada',
-      avatar: null,
-      lastMessage: 'よろしくお願いします！',
-      timestamp: '10:30'
-    }
-  ];
-
-  // サンプルチャットメッセージ
-  const chatMessages: ChatMessage[] = [
-    {
-      id: 1,
-      sender: 'user',
-      message: 'こんにちは！案件についてご相談があります。',
-      timestamp: '10:25'
-    },
-    {
-      id: 2,
-      sender: 'influencer',
-      message: 'こんにちは！よろしくお願いします。',
-      timestamp: '10:28'
-    },
-    {
-      id: 3,
-      sender: 'influencer',
-      message: 'どのような内容でしょうか？',
-      timestamp: '10:30'
-    }
-  ];
-
+  // フィルタリングされた案件リスト
   const filteredProjects = projects.filter(project => {
-    return project.status === filter;
+    if (activeTab === 'public') {
+      return project.distributionType === 'public' || project.status === '公募中';
+    } else {
+      return project.distributionType === 'scout' || project.status === '進行中';
+    }
   });
 
-  return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* ヘッダー */}
-      <header className="text-center py-6">
-        <h1 className="text-2xl font-bold text-tertiary mb-2">案件管理</h1>
-        <p className="text-gray-600 text-sm">進行中の案件を管理</p>
-      </header>
+  // モックデータ初期化
+  useEffect(() => {
+    // モック応募者データを初期化
+    setApplicants([
+      {
+        id: 1,
+        name: "田中美咲",
+        username: "@misaki_tanaka",
+        followers: 25000,
+        engagement: 4.2,
+        status: 'pending',
+        appliedDate: "2024-01-20",
+        matchScore: 92
+      },
+      {
+        id: 2,
+        name: "佐藤ゆき", 
+        username: "@yuki_lifestyle",
+        followers: 18500,
+        engagement: 5.1,
+        status: 'pending',
+        appliedDate: "2024-01-21",
+        matchScore: 89
+      },
+      {
+        id: 3,
+        name: "山田花子",
+        username: "@hanako_eats", 
+        followers: 32000,
+        engagement: 3.8,
+        status: 'approved',
+        appliedDate: "2024-01-19",
+        matchScore: 87
+      }
+    ]);
 
-      {/* 検索・フィルター */}
-      <section className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            type="text"
-            className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-            placeholder="案件を検索..."
-          />
+    // グローバルチャットデータを読み込み
+    const storedChats = JSON.parse(localStorage.getItem('globalChats') || '[]') as ChatPreview[];
+    if (storedChats.length === 0) {
+      // 初期データがない場合はモックデータを設定
+      const initialChats: ChatPreview[] = [
+        {
+          id: 1,
+          influencerName: "山田花子",
+          influencerUsername: "@hanako_eats",
+          lastMessage: "ありがとうございます！詳細について確認させてください。",
+          timestamp: "2024-01-22T14:30:00",
+          unreadCount: 2,
+          projectTitle: "新商品プロモーション"
+        },
+        {
+          id: 2,
+          influencerName: "高橋まい",
+          influencerUsername: "@mai_sweets",
+          lastMessage: "投稿の件、承知いたしました。",
+          timestamp: "2024-01-22T10:15:00",
+          unreadCount: 0,
+          projectTitle: "季節限定メニュー"
+        }
+      ];
+      setChatPreviews(initialChats);
+      localStorage.setItem('globalChats', JSON.stringify(initialChats));
+    } else {
+      setChatPreviews(storedChats);
+    }
+  }, []);
+
+  const handleApproveReject = (applicantId: number, action: 'approve' | 'reject') => {
+    const applicant = applicants.find(a => a.id === applicantId);
+    if (!applicant) return;
+
+    if (action === 'approve') {
+      // 承認時はチャット欄に追加
+      const newChat: ChatPreview = {
+        id: Date.now(),
+        influencerName: applicant.name,
+        influencerUsername: applicant.username,
+        lastMessage: "いつもありがとうございます！よろしくお願いします。",
+        timestamp: new Date().toISOString(),
+        unreadCount: 1,
+        projectTitle: selectedProject?.title
+      };
+      
+      const newChatPreviews = [newChat, ...chatPreviews];
+      setChatPreviews(newChatPreviews);
+      
+      // グローバルチャットにlocalStorageで同期
+      localStorage.setItem('globalChats', JSON.stringify(newChatPreviews));
+      
+      // 応募者を削除（承認済みになったら応募一覧から消える）
+      setApplicants(prev => prev.filter(a => a.id !== applicantId));
+      
+      // 応募者一覧を閉じて、チャット詳細へ遷移
+      setShowApplicantsList(false);
+      setShowAllApplicants(false); // リセット
+      setSelectedChatId(newChat.id);
+      setShowChatDetail(true);
+      
+    } else {
+      // 見送り時は応募者リストから削除
+      setApplicants(prev => prev.filter(a => a.id !== applicantId));
+      alert('見送りしました。');
+    }
+  };
+
+  return (
+    <div>
+      {/* ヘッダー */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-tertiary">案件管理</h1>
+          
+          {/* 下書きボタン */}
+          <button
+            onClick={() => setShowDraftModal(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+          >
+            <FileText size={16} />
+            下書き
+          </button>
         </div>
         
-        <div className="flex space-x-2 overflow-x-auto">
-          {[
-            { key: '下書き', label: '下書き' },
-            { key: '進行中', label: '進行中' }
-          ].map((filterOption) => (
+        {/* タブ切り替え */}
+        <div className="px-4 pb-3">
+          <div className="flex bg-gray-100 rounded-xl p-1">
             <button
-              key={filterOption.key}
-              onClick={() => setFilter(filterOption.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                filter === filterOption.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              onClick={() => setActiveTab('public')}
+              className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition ${
+                activeTab === 'public'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-gray-600'
               }`}
             >
-              {filterOption.label}
+              公募
             </button>
-          ))}
+            <button
+              onClick={() => setActiveTab('scout')}
+              className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition ${
+                activeTab === 'scout'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-gray-600'
+              }`}
+            >
+              スカウト
+            </button>
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* 案件リスト */}
-      <section className="space-y-3">
-        {filteredProjects.map((project) => (
-          <div key={project.id} className="card">
-            {/* 進行中の案件はクリックで詳細表示 */}
-            {project.status === '進行中' ? (
-              <div 
-                onClick={() => handleShowDetail(project)}
-                className="cursor-pointer hover:bg-gray-50 -m-4 p-4 rounded-xl transition-colors"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-tertiary text-sm mb-1">{project.title}</h3>
-                    <p className="text-gray-600 text-xs mb-2">
-                      {project.description ? project.description.slice(0, 60) + '...' : '案件の概要'}
-                    </p>
+      <div className="px-4 py-4 space-y-3">
+        {filteredProjects.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-2">案件がありません</div>
+            <div className="text-sm text-gray-500">
+              {activeTab === 'public' ? '公募案件を作成してください' : 'スカウト案件を作成してください'}
+            </div>
+          </div>
+        ) : (
+          filteredProjects.map((project) => (
+            <div
+              key={project.id}
+              onClick={() => {
+                setSelectedProject(project);
+                setShowProjectDetail(true);
+              }}
+              className="card cursor-pointer hover:shadow-md transition"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-tertiary">{project.title}</h3>
+                    {/* 通知バッジ */}
+                    {activeTab === 'public' && project.applicationsCount! > 0 && (
+                      <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <span>{project.applicationsCount}</span>
+                        <span className="text-[10px] opacity-80">応募</span>
+                      </div>
+                    )}
+                    {project.matchesCount! > 0 && (
+                      <div className="bg-primary text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <span>{project.matchesCount}</span>
+                        <span className="text-[10px] opacity-80">チャット</span>
+                      </div>
+                    )}
                   </div>
-                  <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                    {project.status}
-                  </span>
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                    <span>{project.budget}</span>
+                    <span>成果報酬 {project.rewardRate}</span>
+                    <span>〜 {project.deadline}</span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 mb-2">
+                    {new Date(project.createdAt).toLocaleDateString('ja-JP')} 作成
+                  </div>
+                  
+                  {/* 応募者一覧ボタン（公募のみ） */}
+                  {activeTab === 'public' && project.applicationsCount! > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProject(project);
+                        setShowApplicantsList(true);
+                      }}
+                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Users size={14} />
+                      応募者一覧を見る
+                    </button>
+                  )}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
-                  <div>
-                    <p className="text-gray-500">予算</p>
-                    <p className="font-medium text-tertiary">{project.budget}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">締切</p>
-                    <p className="font-medium text-tertiary">{project.deadline}</p>
-                  </div>
+                <div className="ml-4 flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // 編集機能の実装
+                      alert('編集機能は今後実装予定です');
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <Edit size={16} className="text-gray-500" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('この案件を削除しますか？')) {
+                        setProjects(prev => prev.filter(p => p.id !== project.id));
+                        // localStorageからも削除
+                        const updatedProjects = projects.filter(p => p.id !== project.id);
+                        localStorage.setItem('projects', JSON.stringify(updatedProjects));
+                      }
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <Trash2 size={16} className="text-gray-500" />
+                  </button>
+                  <ChevronRight size={20} className="text-gray-400" />
                 </div>
-                
-                {project.reach > 0 && (
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <p className="text-gray-500">リーチ数</p>
-                      <p className="font-medium text-tertiary">{project.reach.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">エンゲージメント</p>
-                      <p className="font-medium text-tertiary">{project.engagement}%</p>
-                    </div>
-                  </div>
-                )}
               </div>
-            ) : (
-              /* 下書きの案件 */
-              <>
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-tertiary text-sm mb-1">{project.title}</h3>
-                    <p className="text-gray-600 text-xs">
-                      下書き保存済み
-                    </p>
-                  </div>
-                  <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
-                    {project.status}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
-                  <div>
-                    <p className="text-gray-500">予算</p>
-                    <p className="font-medium text-tertiary">{project.budget}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">締切</p>
-                    <p className="font-medium text-tertiary">{project.deadline}</p>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-2 pt-3 border-t border-gray-100">
-                  <button 
-                    onClick={() => handleResumeEdit(project)}
-                    className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <PlayCircle size={16} />
-                    <span>編集再開</span>
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteProject(project.id)}
-                    className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Trash2 size={16} />
-                    <span>削除</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* 完了確認モーダル */}
-      {showCompleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-tertiary mb-3">案件を完了にしますか？</h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              この案件を完了にすると、実績タブに移動します。
-              この操作は取り消すことができません。
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => setShowCompleteModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button 
-                onClick={confirmCompleteProject}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
-              >
-                完了にする
-              </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 削除確認モーダル */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-tertiary mb-3">案件を削除しますか？</h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              この案件を削除します。
-              この操作は取り消すことができません。
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button 
-                onClick={confirmDeleteProject}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
-              >
-                削除する
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* 案件詳細モーダル */}
-      {showDetailModal && selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-md w-full max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-tertiary">案件詳細</h3>
-              <button 
-                onClick={() => setShowDetailModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+      {showProjectDetail && selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full h-[85vh] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-tertiary">{selectedProject.title}</h2>
+              <button
+                onClick={() => setShowProjectDetail(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
               >
-                ×
+                ✕
               </button>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-tertiary mb-2">{selectedProject.title}</h4>
-                <p className="text-gray-600 text-sm line-clamp-2">
-                  {selectedProject.description && selectedProject.description.length > 100 
-                    ? selectedProject.description.slice(0, 100) + '...' 
-                    : selectedProject.description}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-gray-500 text-xs">ステータス</p>
-                  <p className="font-medium">{selectedProject.status}</p>
+            <div className="flex-1 p-4 overflow-y-auto">
+              {/* 基本情報 */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">予算</span>
+                  <span className="font-medium">{selectedProject.budget}</span>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-xs">予算</p>
-                  <p className="font-medium">{selectedProject.budget}</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">成果報酬</span>
+                  <span className="font-medium">{selectedProject.rewardRate}</span>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-xs">成果報酬率</p>
-                  <p className="font-medium">{selectedProject.rewardRate}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs">締切</p>
-                  <p className="font-medium">{selectedProject.deadline}</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">期限</span>
+                  <span className="font-medium">{selectedProject.deadline}</span>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={handleShowCandidates}
-                  className="flex items-center justify-center space-x-1 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors"
-                >
-                  <Users size={16} />
-                  <span>候補者一覧</span>
-                </button>
-                
-                <button 
-                  onClick={() => handleCompleteProject(selectedProject.id)}
-                  className="flex items-center justify-center space-x-1 py-2 px-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-medium transition-colors"
-                >
-                  <CheckCircle size={16} />
-                  <span>案件完了</span>
-                </button>
-              </div>
-              
-              {/* マッチ成立済みユーザーとのチャット */}
-              {matchedUsers.length > 0 && (
-                <div className="pt-2">
-                  <h5 className="font-medium text-tertiary mb-3 flex items-center">
-                    <MessageCircle size={16} className="mr-2" />
-                    マッチ成立済み
-                  </h5>
-                  
-                  <div className="h-80 border border-gray-200 rounded-xl overflow-hidden flex flex-col">
-                    {/* チャット相手リスト */}
-                    <div className="bg-gray-50 p-2 border-b border-gray-200">
-                      {matchedUsers.map((user) => (
-                        <div key={user.id} className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-tertiary">
-                              {user.name.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm text-tertiary">{user.name}</p>
-                            <p className="text-xs text-gray-500">{user.username}</p>
-                          </div>
-                          <span className="text-xs text-gray-400">{user.timestamp}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* チャットメッセージ */}
-                    <div className="flex-1 p-3 space-y-2 overflow-y-auto">
-                      {chatMessages.map((message) => (
-                        <div key={message.id} className={`flex ${
-                          message.sender === 'user' ? 'justify-end' : 'justify-start'
-                        }`}>
-                          <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${
-                            message.sender === 'user' 
-                              ? 'bg-primary text-white' 
-                              : 'bg-gray-100 text-tertiary'
-                          }`}>
-                            <p>{message.message}</p>
-                            <p className={`text-xs mt-1 ${
-                              message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                            }`}>
-                              {message.timestamp}
-                            </p>
+
+              {/* 応募者一覧セクション（公募の場合） */}
+              {selectedProject.distributionType === 'public' && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3">応募者一覧 ({applicants.filter(a => a.status !== 'rejected').length}件)</h3>
+                  <div className="space-y-2">
+                    {applicants
+                      .filter(a => a.status !== 'rejected')
+                      .slice(0, showAllApplicants ? undefined : 3)
+                      .map((applicant) => (
+                        <div key={applicant.id} className="border rounded-lg p-2.5 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-semibold text-gray-600">
+                                  {applicant.name.charAt(0)}
+                                </span>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm text-gray-900">{applicant.name}</div>
+                                <div className="text-xs text-gray-500 truncate">{applicant.username}</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              {applicant.matchScore && (
+                                <div className="text-xs font-semibold text-primary">
+                                  {applicant.matchScore}%
+                                </div>
+                              )}
+                              {applicant.status === 'pending' && (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleApproveReject(applicant.id, 'approve')}
+                                    className="px-2 py-1 bg-primary text-white rounded text-xs hover:bg-primary-dark transition-colors"
+                                  >
+                                    承認
+                                  </button>
+                                  <button
+                                    onClick={() => handleApproveReject(applicant.id, 'reject')}
+                                    className="px-2 py-1 border border-gray-300 text-gray-600 rounded text-xs hover:bg-gray-100 transition-colors"
+                                  >
+                                    見送り
+                                  </button>
+                                </div>
+                              )}
+                              {applicant.status === 'approved' && (
+                                <div className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                                  承認済み
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
-                    </div>
                     
-                    {/* メッセージ入力 */}
-                    <div className="p-2 border-t border-gray-200">
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="メッセージを入力..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        />
-                        <button 
-                          onClick={handleSendMessage}
-                          className="p-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-                        >
-                          <Send size={16} />
-                        </button>
-                      </div>
-                    </div>
+                    {/* 「もっと見る」ボタン */}
+                    {applicants.filter(a => a.status !== 'rejected').length > 3 && !showAllApplicants && (
+                      <button
+                        onClick={() => setShowAllApplicants(true)}
+                        className="w-full py-2 text-sm text-primary hover:bg-gray-50 rounded-lg transition"
+                      >
+                        もっと見る ({applicants.filter(a => a.status !== 'rejected').length - 3}件)
+                      </button>
+                    )}
+                    
+                    {/* 「閉じる」ボタン */}
+                    {showAllApplicants && (
+                      <button
+                        onClick={() => setShowAllApplicants(false)}
+                        className="w-full py-2 text-sm text-gray-500 hover:bg-gray-50 rounded-lg transition"
+                      >
+                        閉じる
+                      </button>
+                    )}
                   </div>
                 </div>
+              )}
+
+              {/* スカウト一覧セクション（スカウトの場合） */}
+              {selectedProject.distributionType === 'scout' && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3">送付済み一覧 (3件)</h3>
+                  <div className="space-y-2">
+                    {[
+                      { id: 1, name: "田中美咲", username: "@misaki_tanaka", followers: 25000, engagement: 4.2 },
+                      { id: 2, name: "佐藤ゆき", username: "@yuki_lifestyle", followers: 18500, engagement: 5.1 },
+                      { id: 3, name: "山田花子", username: "@hanako_eats", followers: 32000, engagement: 3.8 }
+                    ].map((influencer) => (
+                      <div key={influencer.id} className="border rounded-lg p-2.5 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-semibold text-gray-600">
+                                {influencer.name.charAt(0)}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm text-gray-900">{influencer.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{influencer.username}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-gray-600 text-right">
+                            <div>{(influencer.followers / 1000).toFixed(1)}k</div>
+                            <div>{influencer.engagement}%</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* チャット欄プレビュー */}
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">マッチ済みチャット ({chatPreviews.length}件)</h3>
+                {chatPreviews.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center py-12">
+                    <div className="text-center text-gray-400">
+                      <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+                      <div className="text-sm">チャットはまだありません</div>
+                      <div className="text-xs mt-1">応募を承認するとチャットが開始されます</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pb-4">
+                    {chatPreviews.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => {
+                          setSelectedChatId(chat.id);
+                          setShowProjectDetail(false);
+                          setShowChatDetail(true);
+                        }}
+                        className="p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-semibold text-gray-600">
+                                {chat.influencerName.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm text-gray-900">{chat.influencerName}</div>
+                              <div className="text-xs text-gray-500">{chat.influencerUsername}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {chat.unreadCount > 0 && (
+                              <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                                {chat.unreadCount}
+                              </div>
+                            )}
+                            <div className="text-xs text-gray-500">
+                              {new Date(chat.timestamp).toLocaleTimeString('ja-JP', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-700 line-clamp-2">
+                          {chat.lastMessage}
+                        </div>
+                        
+                        {/* プロジェクト名表示 */}
+                        {chat.projectTitle && (
+                          <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                            <span>案件:</span>
+                            <span>{chat.projectTitle}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 応募者一覧モーダル */}
+      {showApplicantsList && selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-tertiary">
+                {selectedProject.distributionType === 'public' ? '応募一覧' : '送付済み一覧'}
+              </h2>
+              <button
+                onClick={() => setShowApplicantsList(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              {selectedProject.distributionType === 'scout' ? (
+                // スカウト：シンプルなプロフィール一覧
+                [
+                  { id: 1, name: "田中美咲", username: "@misaki_tanaka", followers: 25000, engagement: 4.2 },
+                  { id: 2, name: "佐藤ゆき", username: "@yuki_lifestyle", followers: 18500, engagement: 5.1 },
+                  { id: 3, name: "山田花子", username: "@hanako_eats", followers: 32000, engagement: 3.8 }
+                ].map((influencer) => (
+                  <div key={influencer.id} className="border rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-semibold text-gray-600">
+                          {influencer.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{influencer.name}</div>
+                        <div className="text-xs text-gray-500">{influencer.username}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                      <span>{influencer.followers.toLocaleString()}フォロワー</span>
+                      <span>エンゲージメント{influencer.engagement}%</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // 公募：応募者一覧（承認・見送り機能付き）
+                applicants.map((applicant) => (
+                  <div key={applicant.id} className="border rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-semibold text-gray-600">
+                            {applicant.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">{applicant.name}</div>
+                          <div className="text-xs text-gray-500">{applicant.username}</div>
+                        </div>
+                      </div>
+                      
+                      {applicant.matchScore && (
+                        <div className="text-sm font-semibold text-primary">
+                          {applicant.matchScore}%
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
+                      <span>{applicant.followers.toLocaleString()}フォロワー</span>
+                      <span>エンゲージメント{applicant.engagement}%</span>
+                    </div>
+                    
+                    {applicant.status === 'pending' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleApproveReject(applicant.id, 'approve')}
+                          className="flex-1 py-2 bg-primary text-white rounded-lg text-sm flex items-center justify-center gap-1"
+                        >
+                          <UserCheck size={16} />
+                          承認
+                        </button>
+                        <button
+                          onClick={() => handleApproveReject(applicant.id, 'reject')}
+                          className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center justify-center gap-1"
+                        >
+                          <UserX size={16} />
+                          見送り
+                        </button>
+                      </div>
+                    )}
+                    
+                    {applicant.status === 'approved' && (
+                      <div className="text-center py-2 bg-green-50 text-green-700 rounded-lg text-sm">
+                        承認済み
+                      </div>
+                    )}
+                    
+                    {applicant.status === 'rejected' && (
+                      <div className="text-center py-2 bg-gray-50 text-gray-500 rounded-lg text-sm">
+                        見送り済み
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* 候補者一覧モーダル */}
-      {showCandidatesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-md w-full max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-tertiary">候補者一覧</h3>
-              <button 
-                onClick={() => setShowCandidatesModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+      {/* チャット詳細モーダル */}
+      {showChatDetail && selectedChatId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full h-[600px] flex flex-col overflow-hidden">
+            {(() => {
+              const currentChat = chatPreviews.find(chat => chat.id === selectedChatId);
+              return (
+                <>
+                  {/* チャットヘッダー */}
+                  <div className="bg-white border-b p-4 flex items-center gap-3 flex-shrink-0">
+                    <button
+                      onClick={() => setShowChatDetail(false)}
+                      className="text-primary font-medium"
+                    >
+                      ← 戻る
+                    </button>
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-semibold text-gray-600">
+                        {currentChat?.influencerName.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-tertiary text-sm">{currentChat?.influencerName}</div>
+                      <div className="text-xs text-gray-500">{currentChat?.influencerUsername}</div>
+                      {currentChat?.projectTitle && (
+                        <div className="text-xs text-gray-400">{currentChat.projectTitle}</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* メッセージ一覧 */}
+                  <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                    <div className="flex justify-start">
+                      <div className="max-w-[70%] px-3 py-2 rounded-2xl bg-gray-100 text-tertiary">
+                        <p className="text-sm">いつもありがとうございます！よろしくお願いします。</p>
+                        <p className="text-xs text-gray-500 mt-1">14:30</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <div className="max-w-[70%] px-3 py-2 rounded-2xl bg-primary text-white">
+                        <p className="text-sm">こちらこそ、よろしくお願いいたします！</p>
+                        <p className="text-xs text-primary-light mt-1">14:35</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-start">
+                      <div className="max-w-[70%] px-3 py-2 rounded-2xl bg-gray-100 text-tertiary">
+                        <p className="text-sm">{currentChat?.lastMessage}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* メッセージ入力 */}
+                  <div className="bg-white border-t p-4 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="メッセージを入力..."
+                        className="flex-1 p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                      />
+                      <button className="p-2.5 bg-primary text-white rounded-xl">
+                        <Send size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* 下書きモーダル */}
+      {showDraftModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[60vh] overflow-hidden">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-tertiary">下書き一覧</h2>
+              <button
+                onClick={() => setShowDraftModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
               >
-                ×
+                ✕
               </button>
             </div>
             
-            <div className="space-y-3">
-              {candidates.map((candidate) => (
-                <div key={candidate.id} className="border border-gray-200 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-tertiary">
-                          {candidate.name.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-tertiary text-sm">{candidate.name}</h4>
-                        <p className="text-xs text-gray-500">{candidate.username}</p>
-                      </div>
-                    </div>
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                      未返信
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-                    <div>
-                      <p className="text-gray-500">フォロワー</p>
-                      <p className="font-medium">{candidate.followers.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">エンゲージメント</p>
-                      <p className="font-medium">{candidate.engagement}%</p>
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-gray-500">
-                    送信日: {candidate.sentDate}
-                  </p>
-                </div>
-              ))}
+            <div className="p-4">
+              <div className="text-center py-8 text-gray-500">
+                <FileText size={32} className="mx-auto mb-2 text-gray-400" />
+                下書きはありません
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-} 
+}

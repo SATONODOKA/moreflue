@@ -1,18 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save } from 'lucide-react';
+import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save, X, ChevronLeft, ChevronRight, Instagram, Music2, Youtube, DollarSign, ImagePlus, Trash2 } from 'lucide-react';
 
 interface ProjectFormData {
+  // Step1: 詳細設定
   title: string;
-  description: string;
-  expectedRevenue: number;
-  paymentAmount: number;
+  startDate: string;
+  endDate: string;
+  snsPlatforms: string[];
+  hasReward: boolean;
+  hasTransportation: boolean;
+  confirmationFlow: 'pre-check' | 'no-check' | 'post-check';
+  images: File[];
+  
+  // Step2: 報酬設定
+  unitPrice: number;
   rewardRate: number;
-  duration: string;
-  targetAudience: string;
+  costPrice: number;
+  paymentAmount: number;
+  
+  // Step3: ストーリー生成
   storyText: string;
-  confirmationFlow: string;
+  chatHistory: Array<{role: 'ai' | 'user', message: string}>;
 }
 
 interface InfluencerData {
@@ -25,720 +35,952 @@ interface InfluencerData {
   avatar: string;
   matchScore: number;
   recentPosts: number;
+  specialtyTags: string[];
+  location: string;
 }
 
 export default function CreateProjectContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
-  const [storyGenerated, setStoryGenerated] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [imagePreviewIndex, setImagePreviewIndex] = useState(0);
+  const [chatStep, setChatStep] = useState(0);
+  const [currentInput, setCurrentInput] = useState('');
+  const [isEditingStory, setIsEditingStory] = useState(false);
+  const [tempStoryText, setTempStoryText] = useState('');
+  const [showInfluencerModal, setShowInfluencerModal] = useState(false);
   const [selectedInfluencers, setSelectedInfluencers] = useState<number[]>([]);
-  const [showDraftSaveModal, setShowDraftSaveModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchByTag, setSearchByTag] = useState('');
+  
+  // モックインフルエンサーデータ
+  const mockInfluencers: InfluencerData[] = [
+    {
+      id: 1,
+      name: "田中美咲",
+      username: "@misaki_tanaka",
+      followers: 25000,
+      engagement: 4.2,
+      category: "フード・グルメ",
+      avatar: "",
+      matchScore: 92,
+      recentPosts: 15,
+      specialtyTags: ["カフェ", "スイーツ", "グルメ"],
+      location: "東京"
+    },
+    {
+      id: 2,
+      name: "佐藤ゆき",
+      username: "@yuki_lifestyle",
+      followers: 18500,
+      engagement: 5.1,
+      category: "ライフスタイル",
+      avatar: "",
+      matchScore: 89,
+      recentPosts: 22,
+      specialtyTags: ["カフェ", "ライフスタイル", "おしゃれ"],
+      location: "神奈川"
+    },
+    {
+      id: 3,
+      name: "山田花子",
+      username: "@hanako_eats",
+      followers: 32000,
+      engagement: 3.8,
+      category: "フード・グルメ",
+      avatar: "",
+      matchScore: 87,
+      recentPosts: 18,
+      specialtyTags: ["グルメ", "レストラン", "デザート"],
+      location: "大阪"
+    },
+    {
+      id: 4,
+      name: "鈴木健太",
+      username: "@kenta_foodie",
+      followers: 41000,
+      engagement: 4.5,
+      category: "フード・グルメ",
+      avatar: "",
+      matchScore: 85,
+      recentPosts: 12,
+      specialtyTags: ["カフェ", "コーヒー", "グルメ"],
+      location: "東京"
+    },
+    {
+      id: 5,
+      name: "高橋まい",
+      username: "@mai_sweets",
+      followers: 28000,
+      engagement: 4.9,
+      category: "スイーツ",
+      avatar: "",
+      matchScore: 90,
+      recentPosts: 20,
+      specialtyTags: ["スイーツ", "デザート", "カフェ"],
+      location: "福岡"
+    }
+  ];
   
   const [formData, setFormData] = useState<ProjectFormData>({
+    // Step1: 詳細設定
     title: '',
-    description: 'instagram-post', // 初期値を設定
-    expectedRevenue: 100000, // 想定売上
-    paymentAmount: 10000,    // 1投稿あたりの支払額
-    rewardRate: 5,           // 成果報酬率
-    duration: '1週間',
-    targetAudience: '',
+    startDate: '',
+    endDate: '',
+    snsPlatforms: [],
+    hasReward: false,
+    hasTransportation: false,
+    confirmationFlow: 'pre-check',
+    images: [],
+    
+    // Step2: 報酬設定
+    unitPrice: 5000,
+    rewardRate: 5,
+    costPrice: 2000,
+    paymentAmount: 10000,
+    
+    // Step3: ストーリー生成
     storyText: '',
-    confirmationFlow: 'pre-check'
+    chatHistory: []
   });
 
-  // ROI計算を修正
-  const calculateROI = () => {
-    const totalCost = formData.paymentAmount + (formData.expectedRevenue * formData.rewardRate / 100);
-    const netProfit = formData.expectedRevenue - totalCost;
-    const profitMargin = (netProfit / formData.expectedRevenue) * 100;
-    
-    // 支払額と成果報酬率から応募の集まりやすさを判定
-    const totalRewardRate = (formData.paymentAmount / formData.expectedRevenue * 100) + formData.rewardRate;
+  const steps = [
+    { id: 1, title: '詳細設定' },
+    { id: 2, title: '報酬設定' },
+    { id: 3, title: 'ストーリー生成' },
+    { id: 4, title: '確認・配信' }
+  ];
+
+  // 利益シミュレーション計算
+  const calculateSimulation = () => {
+    const expectedCustomers = 100; // モック値
+    const revenue = formData.unitPrice * expectedCustomers;
+    const rewardCost = revenue * formData.rewardRate / 100;
+    const totalCost = formData.paymentAmount + rewardCost + (formData.costPrice * expectedCustomers);
+    const netProfit = revenue - totalCost;
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+    const breakEvenPoint = formData.paymentAmount / (formData.unitPrice - formData.costPrice - (formData.unitPrice * formData.rewardRate / 100));
     
     return {
-      expectedRevenue: formData.expectedRevenue,
-      paymentAmount: formData.paymentAmount,
-      rewardAmount: formData.expectedRevenue * formData.rewardRate / 100,
+      revenue,
+      rewardCost,
       totalCost,
       netProfit,
       profitMargin,
-      applicationProbability: totalRewardRate >= 8 ? 'high' : totalRewardRate >= 5 ? 'medium' : 'low'
+      breakEvenPoint: Math.ceil(breakEvenPoint),
+      isProfit: netProfit > 0
     };
   };
 
-  const roi = calculateROI();
-
-  const handleVoiceRecording = () => {
-    if (!isRecording) {
-      setIsRecording(true);
-      setTimeout(() => {
-        setIsRecording(false);
-        setStoryGenerated(true);
-        setFormData({
-          ...formData,
-          storyText: `当店は創業15年の老舗カフェです。毎朝5時から焙煎する自家製コーヒーと、地元の食材にこだわった手作りスイーツが自慢です。お客様に「ほっと一息つける場所」を提供したいという想いで、一杯一杯丁寧にお作りしています。特に当店の看板メニューである「季節のフルーツタルト」は、地元農家さんから直接仕入れた新鮮なフルーツを使用し、毎日限定10個しか作らない特別な一品です。`
-        });
-      }, 3000);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newImages = Array.from(files).slice(0, 5 - formData.images.length);
+      setFormData({
+        ...formData,
+        images: [...formData.images, ...newImages]
+      });
     }
   };
 
-  const handleAutoMatch = () => {
-    setShowConfirmModal(true);
+  const removeImage = (index: number) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index)
+    });
+    if (imagePreviewIndex >= formData.images.length - 1) {
+      setImagePreviewIndex(Math.max(0, formData.images.length - 2));
+    }
   };
 
-  const handleConfirmAutoMatch = () => {
-    // 新しい案件を作成
+  const toggleSNSPlatform = (platform: string) => {
+    setFormData({
+      ...formData,
+      snsPlatforms: formData.snsPlatforms.includes(platform)
+        ? formData.snsPlatforms.filter(p => p !== platform)
+        : [...formData.snsPlatforms, platform]
+    });
+  };
+
+  // 案件を保存して案件管理タブに遷移
+  const saveProjectAndRedirect = (status: string) => {
     const newProject = {
       id: Date.now(),
       title: formData.title,
       description: formData.storyText,
-      status: '進行中',
+      status: status,
       budget: `¥${formData.paymentAmount.toLocaleString()}`,
       rewardRate: `${formData.rewardRate}%`,
-      expectedRevenue: formData.expectedRevenue,
+      expectedRevenue: formData.unitPrice * 100,
       reach: 0,
       engagement: 0,
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
-      confirmationFlow: formData.confirmationFlow,
-      targetAudience: formData.targetAudience,
-      duration: formData.duration,
-      distributionType: 'auto-match'
+      deadline: formData.endDate,
+      distributionType: status === '公募中' ? 'public' : 'scout',
+      selectedInfluencers: selectedInfluencers,
+      createdAt: new Date().toISOString()
     };
 
-    // localStorageに保存
     const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
     existingProjects.unshift(newProject);
     localStorage.setItem('projects', JSON.stringify(existingProjects));
 
-    setShowConfirmModal(false);
-    alert('マッチしそうなインフルエンサーに案件を配信しました！');
-    // 案件管理タブに移動するロジック（実際の実装では親コンポーネントに通知）
-    window.dispatchEvent(new CustomEvent('switchToManageTab'));
-  };
-
-  const handleNominationFlow = () => {
-    setCurrentStep(5); // インフルエンサー選択ステップに移動
-  };
-
-  const handleInfluencerSelect = (influencerId: number) => {
-    setSelectedInfluencers(prev => 
-      prev.includes(influencerId) 
-        ? prev.filter(id => id !== influencerId)
-        : [...prev, influencerId]
-    );
-  };
-
-  const handleDistributeToSelected = () => {
-    if (selectedInfluencers.length === 0) {
-      alert('インフルエンサーを選択してください');
-      return;
-    }
-
-    // 新しい案件を作成
-    const newProject = {
-      id: Date.now(),
-      title: formData.title,
-      description: formData.storyText,
-      status: '進行中',
-      budget: `¥${formData.paymentAmount.toLocaleString()}`,
-      rewardRate: `${formData.rewardRate}%`,
-      expectedRevenue: formData.expectedRevenue,
-      reach: 0,
-      engagement: 0,
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      confirmationFlow: formData.confirmationFlow,
-      targetAudience: formData.targetAudience,
-      duration: formData.duration,
-      distributionType: 'nomination',
-      selectedInfluencers: selectedInfluencers
-    };
-
-    // localStorageに保存
-    const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    existingProjects.unshift(newProject);
-    localStorage.setItem('projects', JSON.stringify(existingProjects));
-
-    alert(`${selectedInfluencers.length}人のインフルエンサーに案件を配信しました！`);
     // 案件管理タブに移動
     window.dispatchEvent(new CustomEvent('switchToManageTab'));
   };
 
-  const handleSaveDraft = () => {
-    // 下書きを保存
-    const draftProject = {
-      id: Date.now(),
-      title: formData.title || '無題の案件',
-      description: formData.storyText,
-      status: '下書き',
-      budget: `¥${formData.paymentAmount.toLocaleString()}`,
-      rewardRate: `${formData.rewardRate}%`,
-      expectedRevenue: formData.expectedRevenue,
-      reach: 0,
-      engagement: 0,
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      confirmationFlow: formData.confirmationFlow,
-      targetAudience: formData.targetAudience,
-      duration: formData.duration,
-      currentStep: currentStep,
-      formData: formData,
-      storyGenerated: storyGenerated
-    };
+  // フィルタリングされたインフルエンサーリスト
+  const filteredInfluencers = mockInfluencers.filter(influencer => {
+    const matchesName = influencer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       influencer.username.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag = searchByTag === '' || 
+                      influencer.specialtyTags.some(tag => tag.includes(searchByTag));
+    return matchesName && matchesTag;
+  });
 
-    const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    existingProjects.unshift(draftProject);
-    localStorage.setItem('projects', JSON.stringify(existingProjects));
-    
-    setShowDraftSaveModal(false);
-    alert('下書きを保存しました');
-    window.dispatchEvent(new CustomEvent('switchToManageTab'));
+  const toggleInfluencerSelection = (id: number) => {
+    setSelectedInfluencers(prev => 
+      prev.includes(id) 
+        ? prev.filter(selectedId => selectedId !== id)
+        : [...prev, id]
+    );
   };
 
-  const steps = [
-    { id: 1, title: '数字シミュレーション' },
-    { id: 2, title: 'ストーリー生成' },
-    { id: 3, title: '詳細設定' },
-    { id: 4, title: '確認・配信' }
-  ];
-
+  // Step1: 詳細設定
   const renderStep1 = () => (
-    <div className="space-y-2">
-      <div className="card py-3">
-        <h2 className="text-base font-semibold text-tertiary mb-2 flex items-center">
-          <TrendingUp className="mr-2 text-primary" size={16} />
-          利益シミュレーション
+    <div className="space-y-4">
+      <div className="card">
+        <h2 className="text-lg font-semibold text-tertiary mb-4">
+          案件の詳細設定
         </h2>
         
-        <div className="space-y-2">
+        <div className="space-y-4">
+          {/* 案件タイトル */}
           <div>
-            <label className="block text-xs font-medium text-tertiary mb-1">想定売上金額</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-gray-400 text-sm">¥</span>
+            <label className="block text-sm font-medium text-tertiary mb-2">
+              案件タイトル
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              placeholder="例：新メニューのPRキャンペーン"
+              className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          {/* 実施期間 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                開始日
+              </label>
               <input
-                type="number"
-                className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="100000"
-                value={formData.expectedRevenue}
-                onChange={(e) => setFormData({...formData, expectedRevenue: parseInt(e.target.value) || 0})}
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                終了日
+              </label>
+              <input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
 
+          {/* SNS媒体選択 */}
           <div>
-            <label className="block text-xs font-medium text-tertiary mb-1">依頼内容</label>
+            <label className="block text-sm font-medium text-tertiary mb-2">
+              配信媒体（複数選択可）
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => toggleSNSPlatform('instagram')}
+                className={`p-3 rounded-xl border-2 transition ${
+                  formData.snsPlatforms.includes('instagram')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                <Instagram size={20} className="mx-auto mb-1" />
+                <div className="text-xs">Instagram</div>
+              </button>
+              <button
+                onClick={() => toggleSNSPlatform('tiktok')}
+                className={`p-3 rounded-xl border-2 transition ${
+                  formData.snsPlatforms.includes('tiktok')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                <Music2 size={20} className="mx-auto mb-1" />
+                <div className="text-xs">TikTok</div>
+              </button>
+              <button
+                onClick={() => toggleSNSPlatform('youtube')}
+                className={`p-3 rounded-xl border-2 transition ${
+                  formData.snsPlatforms.includes('youtube')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                <Youtube size={20} className="mx-auto mb-1" />
+                <div className="text-xs">YouTube</div>
+              </button>
+            </div>
+          </div>
+
+          {/* オプション設定 */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-tertiary mb-2">
+              オプション設定
+            </label>
+            
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm">成果報酬あり</span>
+              <button
+                onClick={() => setFormData({...formData, hasReward: !formData.hasReward})}
+                className={`w-12 h-6 rounded-full transition ${
+                  formData.hasReward ? 'bg-primary' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition transform ${
+                  formData.hasReward ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm">交通費支給あり</span>
+              <button
+                onClick={() => setFormData({...formData, hasTransportation: !formData.hasTransportation})}
+                className={`w-12 h-6 rounded-full transition ${
+                  formData.hasTransportation ? 'bg-primary' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition transform ${
+                  formData.hasTransportation ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          </div>
+
+          {/* 投稿確認フロー */}
+          <div>
+            <label className="block text-sm font-medium text-tertiary mb-2">
+              投稿確認フロー
+            </label>
             <select
-              className="w-full p-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              value={formData.confirmationFlow}
+              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value as 'pre-check' | 'no-check' | 'post-check'})}
+              className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              <option value="">選択してください</option>
-              <option value="instagram-post">Instagram投稿</option>
-              <option value="instagram-story">Instagramストーリー</option>
-              <option value="tiktok-video">TikTok動画</option>
-              <option value="youtube-short">YouTubeショート</option>
-              <option value="blog-review">ブログレビュー</option>
+              <option value="pre-check">事前確認あり</option>
+              <option value="no-check">確認なし</option>
+              <option value="post-check">納品後確認</option>
             </select>
           </div>
-          
+
+          {/* 画像アップロード */}
           <div>
-            <label className="block text-xs font-medium text-tertiary mb-1">1投稿あたりの支払額</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-gray-400 text-sm">¥</span>
-              <input
-                type="number"
-                className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="10000"
-                value={formData.paymentAmount}
-                onChange={(e) => setFormData({...formData, paymentAmount: parseInt(e.target.value) || 0})}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-medium text-tertiary mb-1">成果報酬率: {formData.rewardRate}%</label>
-            <input
-              type="range"
-              min="0"
-              max="15"
-              value={formData.rewardRate}
-              onChange={(e) => setFormData({...formData, rewardRate: parseInt(e.target.value)})}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-0.5">
-              <span>0%</span>
-              <span>15%</span>
-            </div>
+            <label className="block text-sm font-medium text-tertiary mb-2">
+              案件用画像（最大5枚）
+            </label>
+            
+            {/* 画像プレビュー */}
+            {formData.images.length > 0 && (
+              <div className="mb-3">
+                <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden">
+                  <img
+                    src={URL.createObjectURL(formData.images[imagePreviewIndex])}
+                    alt={`プレビュー ${imagePreviewIndex + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => removeImage(imagePreviewIndex)}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  
+                  {/* 画像インジケーター */}
+                  {formData.images.length > 1 && (
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+                      {formData.images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setImagePreviewIndex(index)}
+                          className={`w-2 h-2 rounded-full transition ${
+                            index === imagePreviewIndex ? 'bg-white' : 'bg-white/50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* 左右スワイプボタン */}
+                  {formData.images.length > 1 && (
+                    <>
+                      {imagePreviewIndex > 0 && (
+                        <button
+                          onClick={() => setImagePreviewIndex(imagePreviewIndex - 1)}
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                      )}
+                      {imagePreviewIndex < formData.images.length - 1 && (
+                        <button
+                          onClick={() => setImagePreviewIndex(imagePreviewIndex + 1)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* アップロードボタン */}
+            {formData.images.length < 5 && (
+              <label className="block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-primary transition">
+                  <ImagePlus size={32} className="mx-auto mb-2 text-gray-400" />
+                  <div className="text-sm text-gray-600">
+                    画像を選択またはドラッグ&ドロップ
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    残り{5 - formData.images.length}枚アップロード可能
+                  </div>
+                </div>
+              </label>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ROI結果表示 */}
-      <div className="card bg-gradient-to-r from-primary/10 to-accent/10 py-2">
-        <h3 className="text-sm font-semibold text-tertiary mb-2">利益シミュレーション結果</h3>
-        
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center">
-            <div className="text-base font-bold text-primary">¥{roi.paymentAmount.toLocaleString()}</div>
-            <div className="text-xs text-gray-600">支払額</div>
-          </div>
-          <div className="text-center">
-            <div className="text-base font-bold text-accent">¥{roi.rewardAmount.toLocaleString()}</div>
-            <div className="text-xs text-gray-600">成果報酬</div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center">
-            <div className="text-base font-bold text-gray-600">¥{roi.totalCost.toLocaleString()}</div>
-            <div className="text-xs text-gray-600">総コスト</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-tertiary">¥{roi.netProfit.toLocaleString()}</div>
-            <div className="text-xs text-gray-600">残る利益</div>
-          </div>
-        </div>
-        
-        <div className={`flex items-center justify-center p-1.5 rounded-xl ${
-          roi.applicationProbability === 'high' ? 'bg-green-100' :
-          roi.applicationProbability === 'medium' ? 'bg-yellow-100' : 'bg-red-100'
-        }`}>
-          {roi.applicationProbability === 'high' ? (
-            <CheckCircle className="text-green-600 mr-1.5" size={14} />
-          ) : (
-            <AlertCircle className={`mr-1.5 ${roi.applicationProbability === 'medium' ? 'text-yellow-600' : 'text-red-600'}`} size={14} />
-          )}
-          <span className={`text-xs font-medium ${
-            roi.applicationProbability === 'high' ? 'text-green-700' :
-            roi.applicationProbability === 'medium' ? 'text-yellow-700' : 'text-red-700'
-          }`}>
-            {roi.applicationProbability === 'high' ? '応募が集まりやすい条件です' :
-             roi.applicationProbability === 'medium' ? '応募は普通程度の条件です' : '応募が集まりにくい可能性があります'}
-          </span>
-        </div>
-      </div>
-
-      <button 
+      <button
         onClick={() => {
-          console.log('次へボタンクリック:', {
-            expectedRevenue: formData.expectedRevenue,
-            paymentAmount: formData.paymentAmount,
-            description: formData.description,
-            currentStep
-          });
           setCurrentStep(2);
+          window.scrollTo(0, 0);
         }}
-        className="button-primary w-full py-2.5"
-        disabled={formData.expectedRevenue <= 0 || formData.paymentAmount <= 0 || !formData.description}
+        disabled={!formData.title || !formData.startDate || !formData.endDate || formData.snsPlatforms.length === 0}
+        className="button-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         次へ
       </button>
     </div>
   );
 
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <h2 className="text-lg font-semibold text-tertiary mb-4 flex items-center">
-          <Sparkles className="mr-2 text-primary" size={20} />
-          お店のこだわりストーリー
-        </h2>
-        
-        <div className="space-y-4">
-          <p className="text-gray-600 text-sm">
-            お店の魅力や想いを音声で教えてください。AIが魅力的な文章に変換します。
-          </p>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-            <Mic className={`mx-auto mb-4 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400'}`} size={48} />
-            
-            {!isRecording && !storyGenerated && (
-              <>
-                <p className="text-gray-600 mb-4">音声録音でお店の魅力を伝えてください</p>
-                <button 
-                  onClick={handleVoiceRecording}
-                  className="button-primary flex items-center mx-auto"
-                >
-                  <Play className="mr-2" size={16} />
-                  録音開始
-                </button>
-              </>
-            )}
-            
-            {isRecording && (
-              <>
-                <p className="text-red-600 mb-4">録音中... お店の魅力を語ってください</p>
-                <button 
-                  onClick={() => setIsRecording(false)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-xl flex items-center mx-auto"
-                >
-                  <Pause className="mr-2" size={16} />
-                  録音停止
-                </button>
-              </>
-            )}
-            
-            {storyGenerated && (
-              <div className="text-left">
-                <div className="bg-green-100 text-green-700 p-3 rounded-xl mb-4 flex items-center">
-                  <CheckCircle className="mr-2" size={16} />
-                  AIがストーリーを生成しました！
-                </div>
-                <textarea
-                  rows={6}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                  value={formData.storyText}
-                  onChange={(e) => setFormData({...formData, storyText: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-2">生成された文章は編集できます</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex space-x-3">
-        <button 
-          onClick={() => setCurrentStep(1)}
-          className="button-secondary flex-1"
-        >
-          戻る
-        </button>
-        <button 
-          onClick={() => setCurrentStep(3)}
-          className="button-primary flex-1"
-          disabled={!storyGenerated}
-        >
-          次へ
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <h2 className="text-lg font-semibold text-tertiary mb-4">案件詳細情報</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-tertiary mb-2">案件タイトル</label>
-            <input
-              type="text"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="例：新商品プロモーション"
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-tertiary mb-2">期間</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 text-gray-400" size={20} />
-                <select
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                >
-                  <option value="1週間">1週間</option>
-                  <option value="2週間">2週間</option>
-                  <option value="1ヶ月">1ヶ月</option>
-                </select>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-tertiary mb-2">ターゲット層</label>
-              <div className="relative">
-                <Target className="absolute left-3 top-3 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="20-30代女性"
-                  value={formData.targetAudience}
-                  onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 投稿確認フロー選択 */}
-      <div className="card">
-        <h2 className="text-lg font-semibold text-tertiary mb-4">投稿確認フロー</h2>
-        
-        <div className="space-y-3">
-          <label className="flex items-start space-x-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-primary transition-colors">
-            <input
-              type="radio"
-              name="confirmationFlow"
-              value="pre-check"
-              checked={formData.confirmationFlow === 'pre-check'}
-              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value})}
-              className="mt-1"
-            />
-            <div>
-              <div className="font-medium text-tertiary">事前に確認する</div>
-              <div className="text-sm text-gray-600">投稿前に内容を確認してから公開</div>
-            </div>
-          </label>
-          
-          <label className="flex items-start space-x-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-primary transition-colors">
-            <input
-              type="radio"
-              name="confirmationFlow"
-              value="post-check"
-              checked={formData.confirmationFlow === 'post-check'}
-              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value})}
-              className="mt-1"
-            />
-            <div>
-              <div className="font-medium text-tertiary">確認せずに納品後チェック</div>
-              <div className="text-sm text-gray-600">投稿後に成果を確認</div>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <div className="flex space-x-3">
-        <button 
-          onClick={() => setCurrentStep(2)}
-          className="button-secondary flex-1"
-        >
-          戻る
-        </button>
-        <button 
-          onClick={() => setCurrentStep(4)}
-          className="button-primary flex-1"
-          disabled={!formData.title.trim()}
-        >
-          次へ
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderStep4 = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <h2 className="text-lg font-semibold text-tertiary mb-4">案件プレビュー</h2>
-        <div className="bg-gray-50 p-4 rounded-xl">
-          <h3 className="font-semibold text-tertiary mb-2">{formData.title}</h3>
-          <div className="text-sm text-gray-600 mb-3">{formData.storyText}</div>
-          
-          <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-            <div>
-              <span className="text-gray-500">支払額:</span>
-              <span className="font-medium text-primary ml-1">¥{formData.paymentAmount.toLocaleString()}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">成果報酬:</span>
-              <span className="font-medium text-accent ml-1">{formData.rewardRate}%</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-tertiary">期間: {formData.duration}</span>
-            <span className={`px-2 py-1 rounded-full text-xs ${
-              formData.confirmationFlow === 'pre-check' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-            }`}>
-              {formData.confirmationFlow === 'pre-check' ? '事前確認あり' : 'スピード重視'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <button 
-          onClick={() => setCurrentStep(3)}
-          className="button-secondary w-full"
-        >
-          戻って修正
-        </button>
-
-        <div className="grid grid-cols-1 gap-3">
-          <button 
-            onClick={handleAutoMatch}
-            className="bg-primary text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-primary-dark transition-colors flex items-center justify-center"
-          >
-            <UserCheck className="mr-2" size={20} />
-            マッチしそうな人に送る
-          </button>
-          
-          <button 
-            onClick={handleNominationFlow}
-            className="bg-accent text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-accent-dark transition-colors flex items-center justify-center"
-          >
-            <Search className="mr-2" size={20} />
-            指名したインフルエンサーに送る
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep5 = () => {
-    // サンプルインフルエンサーデータ
-    const sampleInfluencers: InfluencerData[] = [
-      {
-        id: 1,
-        name: "田中美咲",
-        username: "@misaki_tanaka",
-        followers: 25000,
-        engagement: 4.8,
-        category: "ライフスタイル",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 95,
-        recentPosts: 156
-      },
-      {
-        id: 2,
-        name: "佐藤ゆき",
-        username: "@yuki_sato",
-        followers: 18500,
-        engagement: 5.2,
-        category: "グルメ",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 92,
-        recentPosts: 203
-      },
-      {
-        id: 3,
-        name: "山田花子",
-        username: "@hanako_yamada",
-        followers: 32000,
-        engagement: 3.9,
-        category: "ファッション",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 88,
-        recentPosts: 89
-      },
-      {
-        id: 4,
-        name: "鈴木太郎",
-        username: "@taro_suzuki",
-        followers: 15200,
-        engagement: 6.1,
-        category: "ライフスタイル",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 85,
-        recentPosts: 124
-      },
-      {
-        id: 5,
-        name: "高橋まり",
-        username: "@mari_takahashi",
-        followers: 41000,
-        engagement: 4.2,
-        category: "美容",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 82,
-        recentPosts: 178
-      },
-      {
-        id: 6,
-        name: "伊藤けん",
-        username: "@ken_ito",
-        followers: 28500,
-        engagement: 5.5,
-        category: "グルメ",
-        avatar: "/api/placeholder/40/40",
-        matchScore: 79,
-        recentPosts: 145
-      }
-    ];
-
+  // Step2: 報酬設定
+  const renderStep2 = () => {
+    const simulation = calculateSimulation();
+    
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-tertiary">インフルエンサー選択</h2>
-          <div className="text-sm text-gray-600">
-            {selectedInfluencers.length}人選択中
-          </div>
-        </div>
-
-        <div className="card p-3">
-          <div className="flex items-center space-x-2 mb-3">
-            <Search className="text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="インフルエンサーを検索..."
-              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {sampleInfluencers.map((influencer) => (
-            <div
-              key={influencer.id}
-              className={`card p-3 cursor-pointer transition-colors ${
-                selectedInfluencers.includes(influencer.id) 
-                  ? 'ring-2 ring-primary bg-primary/5' 
-                  : 'hover:bg-gray-50'
-              }`}
-              onClick={() => handleInfluencerSelect(influencer.id)}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <Users size={16} className="text-gray-500" />
-                  </div>
-                  {selectedInfluencers.includes(influencer.id) && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                      <CheckCircle size={12} className="text-white" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium text-tertiary text-sm">{influencer.name}</h3>
-                    <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                      マッチ度 {influencer.matchScore}%
-                    </div>
-                  </div>
-                  
-                  <div className="text-xs text-gray-600 mb-2">
-                    {influencer.username} • {influencer.category}
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <Users size={12} />
-                      <span>{influencer.followers.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Heart size={12} />
-                      <span>{influencer.engagement}%</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Eye size={12} />
-                      <span>{influencer.recentPosts}投稿</span>
-                    </div>
-                  </div>
-                </div>
+        <div className="card">
+          <h2 className="text-lg font-semibold text-tertiary mb-4 flex items-center">
+            <DollarSign className="mr-2 text-primary" size={20} />
+            報酬設定・利益シミュレーション
+          </h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                想定単価（1人あたり利用金額）
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-gray-400 text-sm">¥</span>
+                <input
+                  type="number"
+                  value={formData.unitPrice}
+                  onChange={(e) => setFormData({...formData, unitPrice: parseInt(e.target.value) || 0})}
+                  className="w-full pl-8 pr-3 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
               </div>
             </div>
-          ))}
+
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                成果報酬率: {formData.rewardRate}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={formData.rewardRate}
+                onChange={(e) => setFormData({...formData, rewardRate: parseInt(e.target.value)})}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span>20%</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                原価（1人あたりコスト）
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-gray-400 text-sm">¥</span>
+                <input
+                  type="number"
+                  value={formData.costPrice}
+                  onChange={(e) => setFormData({...formData, costPrice: parseInt(e.target.value) || 0})}
+                  className="w-full pl-8 pr-3 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-tertiary mb-2">
+                インフルエンサーへの支払額（1投稿あたり）
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-gray-400 text-sm">¥</span>
+                <input
+                  type="number"
+                  value={formData.paymentAmount}
+                  onChange={(e) => setFormData({...formData, paymentAmount: parseInt(e.target.value) || 0})}
+                  className="w-full pl-8 pr-3 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex space-x-3">
-          <button 
-            onClick={() => setCurrentStep(4)}
-            className="button-secondary flex-1"
+        {/* シミュレーション結果 */}
+        <div className="card bg-gradient-to-r from-primary/10 to-accent/10">
+          <h3 className="text-sm font-semibold text-tertiary mb-3">
+            利益シミュレーション（100人来店想定）
+          </h3>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">売上</span>
+              <span className="text-lg font-bold text-primary">
+                ¥{simulation.revenue.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">支払額</span>
+              <span className="text-sm font-medium">
+                ¥{formData.paymentAmount.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">成果報酬</span>
+              <span className="text-sm font-medium">
+                ¥{simulation.rewardCost.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">原価合計</span>
+              <span className="text-sm font-medium">
+                ¥{(formData.costPrice * 100).toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="border-t pt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">純利益</span>
+                <span className={`text-xl font-bold ${simulation.isProfit ? 'text-green-600' : 'text-red-600'}`}>
+                  ¥{simulation.netProfit.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-2 p-2 bg-white/50 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">損益分岐点</div>
+                <div className="text-sm font-semibold">{simulation.breakEvenPoint}人</div>
+              </div>
+            </div>
+            
+            {/* 利益率ゲージ */}
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span>利益率</span>
+                <span>{simulation.profitMargin.toFixed(1)}%</span>
+              </div>
+              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${
+                    simulation.profitMargin > 20 ? 'bg-green-500' :
+                    simulation.profitMargin > 10 ? 'bg-yellow-500' :
+                    simulation.profitMargin > 0 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(Math.max(simulation.profitMargin, 0), 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setCurrentStep(1);
+              window.scrollTo(0, 0);
+            }}
+            className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700"
           >
             戻る
           </button>
-          <button 
-            onClick={handleDistributeToSelected}
-            className="bg-primary text-white font-medium py-3 px-6 rounded-xl shadow-soft hover:bg-primary-dark transition-colors flex-1 flex items-center justify-center"
-            disabled={selectedInfluencers.length === 0}
+          <button
+            onClick={() => {
+              setCurrentStep(3);
+              window.scrollTo(0, 0);
+            }}
+            className="flex-1 button-primary py-3"
           >
-            <Send className="mr-2" size={16} />
-            配信する ({selectedInfluencers.length}人)
+            次へ
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Step3: ストーリー生成（モックAIチャット）
+  const renderStep3 = () => {
+    const chatQuestions = [
+      "今回の案件のこだわりを教えてください",
+      "その商品・サービスの背景を教えてください",
+      "お客様にどんな価値を届けたいですか？"
+    ];
+
+    const handleChatResponse = (response: string) => {
+      const newHistory = [...formData.chatHistory, 
+        { role: 'ai' as const, message: chatQuestions[chatStep] },
+        { role: 'user' as const, message: response }
+      ];
+      
+      setFormData({
+        ...formData,
+        chatHistory: newHistory
+      });
+      
+      // 自動スクロール
+      setTimeout(() => {
+        const chatContainer = document.getElementById('chat-container');
+        if (chatContainer) {
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      }, 100);
+      
+      if (chatStep < chatQuestions.length - 1) {
+        setChatStep(chatStep + 1);
+      } else {
+        // 最後の質問の場合、ストーリーを生成（すべての回答を統合）
+        const allResponses = newHistory.filter(h => h.role === 'user').map(h => h.message);
+        const generatedStory = `【${formData.title}】\n\n${allResponses[0]}\n\n${allResponses[1]}\n\n${allResponses[2]}\n\n皆様のご来店を心よりお待ちしております。`;
+        
+        setFormData({
+          ...formData,
+          chatHistory: newHistory,
+          storyText: generatedStory
+        });
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="card">
+          <h2 className="text-lg font-semibold text-tertiary mb-4 flex items-center">
+            <Sparkles className="mr-2 text-primary" size={20} />
+            ストーリー生成
+          </h2>
+          
+          {/* チャット履歴 */}
+          <div id="chat-container" className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+            {formData.chatHistory.map((chat, index) => (
+              <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-xl ${
+                  chat.role === 'user' 
+                    ? 'bg-primary text-white' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  <div className="text-sm">{chat.message}</div>
+                </div>
+              </div>
+            ))}
+            
+            {/* 現在の質問 */}
+            {chatStep < chatQuestions.length && formData.storyText === '' && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] p-3 rounded-xl bg-gray-100 text-gray-700">
+                  <div className="text-sm">{chatQuestions[chatStep]}</div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* 入力エリア */}
+          {formData.storyText === '' && (
+            <div className="space-y-3">
+              <textarea
+                value={currentInput}
+                onChange={(e) => setCurrentInput(e.target.value)}
+                placeholder="回答を入力してください..."
+                className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                rows={3}
+              />
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setIsRecording(!isRecording);
+                    if (!isRecording) {
+                      // モック：3秒後に自動でテキストを入力
+                      setTimeout(() => {
+                        const mockResponses = [
+                          "新鮮な季節の食材を使った特別メニューで、地元農家さんから直送の野菜を使用しています。",
+                          "創業20年の伝統を守りながら、新しい挑戦を続けています。毎朝仕入れる新鮮な素材が自慢です。",
+                          "お客様に「ほっと一息つける空間」と「特別な味わい」を提供し、日常に小さな幸せを届けたいです。"
+                        ];
+                        setCurrentInput(mockResponses[chatStep] || mockResponses[0]);
+                        setIsRecording(false);
+                      }, 3000);
+                    }
+                  }}
+                  className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 ${
+                    isRecording 
+                      ? 'bg-red-500 text-white' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <Mic size={20} />
+                  {isRecording ? '録音中...' : '音声入力'}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    if (currentInput.trim()) {
+                      handleChatResponse(currentInput);
+                      setCurrentInput('');
+                    }
+                  }}
+                  disabled={!currentInput.trim()}
+                  className="flex-1 button-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  送信
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* 生成されたストーリー */}
+          {formData.storyText && (
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 rounded-xl">
+              <h3 className="text-sm font-semibold text-tertiary mb-2">生成されたストーリー</h3>
+              
+              {isEditingStory ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={tempStoryText}
+                    onChange={(e) => setTempStoryText(e.target.value)}
+                    className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    rows={6}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setFormData({...formData, storyText: tempStoryText});
+                        setIsEditingStory(false);
+                      }}
+                      className="flex-1 button-primary py-2 text-sm"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => setIsEditingStory(false)}
+                      className="flex-1 py-2 border border-gray-300 rounded-xl text-gray-700 text-sm"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap mb-3">{formData.storyText}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setTempStoryText(formData.storyText);
+                        setIsEditingStory(true);
+                      }}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      編集する
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFormData({...formData, storyText: '', chatHistory: []});
+                        setChatStep(0);
+                      }}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      もう一度生成する
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setCurrentStep(2);
+              window.scrollTo(0, 0);
+            }}
+            className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700"
+          >
+            戻る
+          </button>
+          <button
+            onClick={() => {
+              setCurrentStep(4);
+              window.scrollTo(0, 0);
+            }}
+            disabled={!formData.storyText}
+            className="flex-1 button-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            次へ
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Step4: 確認・配信
+  const renderStep4 = () => {
+    const simulation = calculateSimulation();
+    
+    return (
+      <div className="space-y-4">
+        <div className="card">
+          <h2 className="text-lg font-semibold text-tertiary mb-4">
+            案件内容の確認
+          </h2>
+          
+          <div className="space-y-4">
+            {/* 基本情報 */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-2">基本情報</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">タイトル</span>
+                  <span className="font-medium">{formData.title}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">期間</span>
+                  <span className="font-medium">{formData.startDate} 〜 {formData.endDate}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">配信媒体</span>
+                  <span className="font-medium">{formData.snsPlatforms.join(', ')}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* 報酬設定 */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-2">報酬設定</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">支払額</span>
+                  <span className="font-medium">¥{formData.paymentAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">成果報酬率</span>
+                  <span className="font-medium">{formData.rewardRate}%</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">予想純利益</span>
+                  <span className={`font-bold ${simulation.isProfit ? 'text-green-600' : 'text-red-600'}`}>
+                    ¥{simulation.netProfit.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* ストーリー */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-2">ストーリー</h3>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{formData.storyText}</p>
+              </div>
+            </div>
+            
+            {/* オプション */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-2">オプション</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">成果報酬</span>
+                  <span className="font-medium">{formData.hasReward ? 'あり' : 'なし'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">交通費支給</span>
+                  <span className="font-medium">{formData.hasTransportation ? 'あり' : 'なし'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">投稿確認</span>
+                  <span className="font-medium">
+                    {formData.confirmationFlow === 'pre-check' ? '事前確認あり' :
+                     formData.confirmationFlow === 'no-check' ? '確認なし' : '納品後確認'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 配信ボタン */}
+        <div className="space-y-3">
+          <button
+            onClick={() => {
+              if (confirm('案件を公募として配信しますか？')) {
+                saveProjectAndRedirect('公募中');
+              }
+            }}
+            className="w-full button-primary py-3"
+          >
+            公募する
+          </button>
+          
+          <button
+            onClick={() => setShowInfluencerModal(true)}
+            className="w-full py-3 border border-primary text-primary rounded-xl"
+          >
+            指定したインフルエンサーにスカウト送信
+          </button>
+          
+          <button
+            onClick={() => {
+              setCurrentStep(3);
+              window.scrollTo(0, 0);
+            }}
+            className="w-full py-3 text-gray-600 text-sm"
+          >
+            戻る
           </button>
         </div>
       </div>
@@ -746,102 +988,172 @@ export default function CreateProjectContent() {
   };
 
   return (
-    <div className="min-h-screen p-3 space-y-2">
+    <div>
       {/* ヘッダー */}
-      <header className="text-center py-2 relative">
-        <h1 className="text-xl font-bold text-tertiary mb-1">新規案件作成</h1>
-        <p className="text-gray-600 text-xs">数字と想いで魅力的な案件を作成</p>
-        <button
-          onClick={() => setShowDraftSaveModal(true)}
-          className="absolute right-0 top-0 p-2 text-gray-600 hover:text-primary"
-        >
-          <Save size={24} />
-          <span className="text-xs">下書き</span>
-        </button>
-      </header>
-
-      {/* ステップインジケーター - 2行に分けて表示 */}
-      <div className="card py-2">
-        <div className="grid grid-cols-2 gap-2">
-          {steps.map((step) => (
-            <div key={step.id} className="flex items-center justify-center p-1">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium mr-2 ${
-                step.id === currentStep 
-                  ? 'bg-primary text-white' 
-                  : step.id < currentStep 
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {step.id < currentStep ? '✓' : step.id}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-tertiary text-center">新規案件作成</h1>
+        </div>
+        
+        {/* ステップインジケーター */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    currentStep === step.id 
+                      ? 'bg-primary text-white' 
+                      : currentStep > step.id 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-gray-200 text-gray-400'
+                  }`}>
+                    {currentStep > step.id ? <CheckCircle size={16} /> : step.id}
+                  </div>
+                  <span className={`text-[10px] mt-1 whitespace-nowrap ${
+                    currentStep === step.id ? 'text-primary font-semibold' : 'text-gray-400'
+                  }`}>
+                    {step.title}
+                  </span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`h-0.5 flex-1 mx-2 ${
+                    currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                  }`} />
+                )}
               </div>
-              <div className="text-xs font-medium text-tertiary">
-                {step.title}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ステップコンテンツ */}
-      {currentStep === 1 && renderStep1()}
-      {currentStep === 2 && renderStep2()}
-      {currentStep === 3 && renderStep3()}
-      {currentStep === 4 && renderStep4()}
-      {currentStep === 5 && renderStep5()}
-
-      {/* 確認モーダル */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-tertiary mb-3">配信確認</h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              マッチしそうなインフルエンサーに案件を配信しますか？
-              配信後は案件管理の「進行中」タブで確認できます。
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => setShowConfirmModal(false)}
-                className="button-secondary flex-1"
-              >
-                キャンセル
-              </button>
-              <button 
-                onClick={handleConfirmAutoMatch}
-                className="button-primary flex-1"
-              >
-                配信する
-              </button>
+      {/* コンテンツ */}
+      <div className="px-4 py-4">
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+        {currentStep === 4 && renderStep4()}
+      </div>
+      
+      {/* インフルエンサー選択モーダル */}
+      {showInfluencerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="px-4 py-3 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-tertiary">インフルエンサー選択</h2>
+                <button
+                  onClick={() => setShowInfluencerModal(false)}
+                  className="p-2 rounded-full hover:bg-gray-100"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 下書き保存モーダル */}
-      {showDraftSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-tertiary mb-3">下書き保存</h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              現在の入力内容を下書きとして保存しますか？
-              案件管理の「下書き」タブから編集を再開できます。
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => setShowDraftSaveModal(false)}
-                className="button-secondary flex-1"
-              >
-                キャンセル
-              </button>
-              <button 
-                onClick={handleSaveDraft}
-                className="button-primary flex-1"
-              >
-                保存する
-              </button>
+            
+            <div className="p-4">
+              {/* 検索ボックス */}
+              <div className="space-y-3 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="名前、IDで検索"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="得意ハッシュタグで検索"
+                    value={searchByTag}
+                    onChange={(e) => setSearchByTag(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              {/* インフルエンサーリスト */}
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {filteredInfluencers.map((influencer) => (
+                  <div
+                    key={influencer.id}
+                    className={`p-3 border rounded-xl cursor-pointer transition ${
+                      selectedInfluencers.includes(influencer.id)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => toggleInfluencerSelection(influencer.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-semibold text-gray-600">
+                              {influencer.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{influencer.name}</div>
+                            <div className="text-xs text-gray-500">{influencer.username}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
+                          <span>{influencer.followers.toLocaleString()}フォロワー</span>
+                          <span>エンゲージメント{influencer.engagement}%</span>
+                        </div>
+                        
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {influencer.specialtyTags.map((tag, index) => (
+                            <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="ml-2 text-sm font-semibold text-primary">
+                        {influencer.matchScore}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* 送信ボタン */}
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => setShowInfluencerModal(false)}
+                  className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedInfluencers.length === 0) {
+                      alert('インフルエンサーを選択してください');
+                      return;
+                    }
+                    if (confirm(`${selectedInfluencers.length}人のインフルエンサーにスカウトを送信しますか？`)) {
+                      setShowInfluencerModal(false);
+                      saveProjectAndRedirect('進行中');
+                    }
+                  }}
+                  className="flex-1 button-primary py-3"
+                  disabled={selectedInfluencers.length === 0}
+                >
+                  {selectedInfluencers.length}人に送信
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-} 
+}
