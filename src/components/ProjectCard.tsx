@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface ProjectCardProps {
@@ -15,6 +16,8 @@ interface ProjectCardProps {
   location: string;
   condition: string;
   imageUrl?: string;
+  images?: string[];
+  recommendationPoint?: string;
   platforms: ('instagram' | 'tiktok' | 'twitter')[];
   isFollowing?: boolean;
   hasApplied?: boolean;
@@ -29,11 +32,17 @@ const ProjectCard = ({
   location,
   condition,
   imageUrl,
+  images,
+  recommendationPoint,
   platforms,
   isFollowing = false,
   hasApplied = false,
 }: ProjectCardProps) => {
   const router = useRouter();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const displayImages = images && images.length > 0 ? images : (imageUrl ? [imageUrl] : []);
+  const hasMultipleImages = displayImages.length > 1;
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -79,6 +88,34 @@ const ProjectCard = ({
     }
   };
 
+  const handleImageSwipe = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!hasMultipleImages) return;
+
+    const startX = e.touches[0]?.clientX;
+    if (!startX) return;
+    
+    const handleTouchEnd = (endEvent: TouchEvent) => {
+      const endX = endEvent.changedTouches[0]?.clientX;
+      if (!endX) return;
+      
+      const diffX = startX - endX;
+      
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0 && currentImageIndex < displayImages.length - 1) {
+          // 左スワイプ - 次の画像
+          setCurrentImageIndex(prev => prev + 1);
+        } else if (diffX < 0 && currentImageIndex > 0) {
+          // 右スワイプ - 前の画像
+          setCurrentImageIndex(prev => prev - 1);
+        }
+      }
+      
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+    
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+  };
+
   return (
     <div 
       className="bg-white mb-1 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -121,14 +158,30 @@ const ProjectCard = ({
         </div>
       </div>
 
-      {/* 画像部分 - オーバーレイ付き */}
-      <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
-        {imageUrl ? (
-          <img 
-            src={imageUrl} 
-            alt={storeName}
-            className="w-full h-full object-cover"
-          />
+      {/* 画像部分 - 複数画像スワイプ対応 */}
+      <div className="w-full h-48 bg-gray-200 relative overflow-hidden" onTouchStart={handleImageSwipe}>
+        {displayImages.length > 0 ? (
+          <>
+            <img 
+              src={displayImages[currentImageIndex]} 
+              alt={storeName}
+              className="w-full h-full object-cover transition-opacity duration-300"
+            />
+            
+            {/* インジケーター */}
+            {hasMultipleImages && (
+              <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                {displayImages.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-salmon-coral to-sunset-yellow flex items-center justify-center">
             <div className="text-white text-center">
@@ -166,7 +219,17 @@ const ProjectCard = ({
 
       {/* 報酬と条件部分 */}
       <div className="p-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
+        {/* おすすめポイント */}
+        {recommendationPoint && (
+          <div className="mb-2 p-2 bg-light-greige rounded-md">
+            <div className="text-xs text-smoky-navy">
+              <span className="text-salmon-coral font-medium">おすすめポイント：</span>
+              {recommendationPoint}
+            </div>
+          </div>
+        )}
+        
+        <div className="flex items-center justify-between mb-3">
           <div className="text-salmon-coral font-bold text-base">
             {reward.type === 'fixed' ? (
               <span>¥{reward.amount.toLocaleString()}</span>
@@ -181,18 +244,45 @@ const ProjectCard = ({
           </div>
         </div>
 
-        {/* 詳細ボタン */}
+        {/* ボタン群 */}
         {hasApplied ? (
-          <div className="w-full bg-gray-200 text-gray-600 py-1.5 rounded-lg text-xs font-medium text-center border-0">
+          <div className="w-full bg-gray-200 text-gray-600 py-2 rounded-lg text-sm font-medium text-center border-0">
             応募済み
           </div>
         ) : (
-          <button 
-            onClick={(e) => handleButtonClick(e, 'detail')}
-            className="w-full bg-salmon-coral text-white py-1.5 rounded-lg text-xs font-medium hover:bg-opacity-90 transition-colors border-0"
-          >
-            案件詳細を見る
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log(`Detail button clicked for ${storeName}`); // デバッグ用
+                handleButtonClick(e, 'detail');
+              }}
+              className="flex-1 bg-white border border-salmon-coral text-salmon-coral py-2 rounded-lg text-sm font-medium hover:bg-salmon-coral hover:text-white transition-colors"
+              type="button"
+            >
+              詳細を見る
+            </button>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log(`Apply button clicked for ${storeName}`); // デバッグ用
+                // 直接応募処理
+                if (confirm(`${storeName}の案件に応募しますか？`)) {
+                  // 応募済みとして処理し、まずホームで除外してから応募済み一覧に移動
+                  router.push(`/?applied=${id}&source=home-direct`);
+                  setTimeout(() => {
+                    router.push(`/projects?applied=${id}&source=home-direct&showApplied=true`);
+                  }, 100);
+                }
+              }}
+              className="flex-1 bg-salmon-coral text-white py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-colors"
+              type="button"
+            >
+              応募する
+            </button>
+          </div>
         )}
       </div>
     </div>
