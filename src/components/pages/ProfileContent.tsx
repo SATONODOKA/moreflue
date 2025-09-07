@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Settings, Edit, MapPin, Clock, Users, Star, ExternalLink, Camera, Instagram, Wifi, Coffee, Car } from 'lucide-react';
+import { useState } from 'react';
+import { Settings, Edit, MapPin, Clock, Users, Star, ExternalLink, Instagram, Wifi, Coffee, Car } from 'lucide-react';
 
 interface ShopInfo {
   name: string;

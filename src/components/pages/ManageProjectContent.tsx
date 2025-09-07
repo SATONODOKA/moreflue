@@ -40,6 +40,7 @@ interface ChatPreview {
   timestamp: string;
   unreadCount: number;
   avatar?: string;
+  projectTitle?: string;
 }
 
 export default function ManageProjectContent() {
