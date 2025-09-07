@@ -440,7 +440,14 @@ function ProjectsContent() {
 
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl">📋</div>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    }>
       <ProjectsContent />
     </Suspense>
   );

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ProjectManagePage() {
+function ProjectManageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const status = searchParams.get('status') || 'all';
@@ -192,5 +192,20 @@ export default function ProjectManagePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProjectManagePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">📊</div>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <ProjectManageContent />
+    </Suspense>
   );
 }

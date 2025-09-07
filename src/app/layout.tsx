@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default function RootLayout({
           <main className="max-w-md mx-auto bg-white min-h-screen">
             {children}
           </main>
-          <Navigation />
+          <Suspense fallback={<div className="fixed bottom-0 left-0 right-0 bg-white h-16 max-w-md mx-auto"></div>}>
+            <Navigation />
+          </Suspense>
         </div>
       </body>
     </html>
