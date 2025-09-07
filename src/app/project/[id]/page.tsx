@@ -232,6 +232,22 @@ const mockReplies = [
   'お待ちしております！',
 ];
 
+// 店舗の電話番号マッピング（実際の実装では店舗データベースから取得）
+const getPhoneNumber = (projectId: string): string => {
+  const phoneNumbers: { [key: string]: string } = {
+    '1': '03-1234-5678', // カフェ・ド・パリ
+    '2': '03-2345-6789', // イタリアン・ベラヴィスタ
+    '3': '03-3456-7890', // ヘアサロン STYLE
+    '4': '03-4567-8901', // フィットネスジム POWER
+    '5': '03-5678-9012', // スイーツカフェ Sweet
+    '6': '03-6789-0123', // ラーメン 龍
+    '7': '03-7890-1234', // 焼肉 龍神
+    '8': '03-8901-2345', // スイーツカフェ Sweet（スカウト版）
+    '9': '03-9012-3456', // フィットネスジム POWER（スカウト版）
+  };
+  return phoneNumbers[projectId] || '03-0000-0000';
+};
+
 export default function ProjectDetail() {
   const params = useParams();
   const router = useRouter();
@@ -361,7 +377,7 @@ export default function ProjectDetail() {
           </div>
         </div>
       ) : (
-        <div className="bg-white p-4 mb-4">
+        <div className="bg-white p-4">
           <div className="mb-4">
             <img 
               src={project.imageUrl} 
@@ -499,6 +515,58 @@ export default function ProjectDetail() {
             >
               送信
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 来店予約セクション（進行中案件のみ） */}
+      {tab === 'inProgress' && (
+        <div className="bg-white border-t border-gray-100 p-4 mb-16">
+          <h3 className="font-bold text-smoky-navy mb-4 flex items-center gap-2">
+            <span className="text-xl">📅</span>
+            来店予約
+          </h3>
+          
+          <div className="space-y-3">
+            {/* ホットペッパー予約ボタン */}
+            <button
+              onClick={() => {
+                // ホットペッパーのURL（実際の実装では店舗IDを使用）
+                const hotpepperUrl = `https://www.hotpepper.jp/strJ${project.id}/`;
+                window.open(hotpepperUrl, '_blank');
+              }}
+              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">🍽️</span>
+              ホットペッパーで予約する
+            </button>
+            
+            {/* 電話予約ボタン */}
+            <button
+              onClick={() => {
+                // 店舗の電話番号（実際の実装では各店舗の電話番号を設定）
+                const phoneNumber = getPhoneNumber(project.id);
+                window.location.href = `tel:${phoneNumber}`;
+              }}
+              className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">📞</span>
+              電話で予約する
+            </button>
+            
+            {/* 店舗情報 */}
+            <div className="bg-gray-50 p-3 rounded-lg text-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-700">{project.storeName}</p>
+                  <p className="text-gray-600">{project.details.travelTime}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-gray-600">営業時間</p>
+                  <p className="font-medium text-gray-700">11:00-22:00</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

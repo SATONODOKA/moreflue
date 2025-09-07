@@ -21,7 +21,38 @@ const Navigation = () => {
           // 末尾スラッシュの有無を考慮してマッチング
           const normalizedPathname = pathname.replace(/\/$/, '') || '/';
           const normalizedHref = item.href.replace(/\/$/, '') || '/';
-          const isActive = normalizedPathname === normalizedHref;
+          
+          // 大分類でのマッチングを行う（サブページでも親タブをアクティブに）
+          let isActive = false;
+          if (normalizedHref === '/') {
+            // ホーム: / またはホームからの案件詳細でアクティブ
+            if (normalizedPathname === '/') {
+              isActive = true;
+            } else if (normalizedPathname.startsWith('/project')) {
+              // URLパラメータからsourceを確認（ホームからの遷移のみアクティブ）
+              const urlParams = new URLSearchParams(window.location.search);
+              const source = urlParams.get('source');
+              isActive = source === 'home' || (!source && !urlParams.get('tab'));
+            }
+          } else if (normalizedHref === '/projects') {
+            // 案件管理: /projects でアクティブ
+            // /project/[id] の場合はURLパラメータでソースを判定
+            if (normalizedPathname === '/projects') {
+              isActive = true;
+            } else if (normalizedPathname.startsWith('/project')) {
+              // URLパラメータからsourceを確認（案件管理からの遷移のみアクティブ）
+              const urlParams = new URLSearchParams(window.location.search);
+              const source = urlParams.get('source');
+              const tab = urlParams.get('tab');
+              isActive = source === 'scout' || tab === 'scout' || tab === 'inProgress';
+            }
+          } else if (normalizedHref === '/messages') {
+            // チャット: /messages, /messages/[id] の両方でアクティブ
+            isActive = normalizedPathname === '/messages' || normalizedPathname.startsWith('/messages/');
+          } else {
+            // その他のタブは前方一致で判定
+            isActive = normalizedPathname.startsWith(normalizedHref) || normalizedPathname === normalizedHref;
+          }
           
           return (
             <Link

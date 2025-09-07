@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '@/components/Header';
 
 export default function DashboardPage() {
   const [showDetailedEarnings, setShowDetailedEarnings] = useState(false);
@@ -80,12 +79,10 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <Header title="ダッシュボード" />
-      
-      <div className="px-4 py-4 bg-light-greige min-h-screen">
+      <div className="px-4 pt-2 pb-4 bg-light-greige min-h-screen">
         {/* 今月の報酬概要カード */}
         <div 
-          className="bg-white rounded-lg p-6 mb-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
+          className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setShowDetailedEarnings(true)}
         >
           <div className="flex items-center justify-between mb-4">
@@ -96,12 +93,12 @@ export default function DashboardPage() {
           </div>
           
           {/* 今月の報酬（一行目） */}
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">💰</span>
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">💰</span>
               <span className="text-sm font-medium text-gray-600">今月の報酬</span>
             </div>
-            <div className="text-3xl font-bold text-smoky-navy mb-1">¥128,000</div>
+            <div className="text-2xl font-bold text-smoky-navy mb-1">¥128,000</div>
             <div className="text-sm font-medium text-green-600 flex items-center gap-1">
               ↗ 15%
               <span className="text-gray-500">前月比 +¥17,000</span>
@@ -109,30 +106,30 @@ export default function DashboardPage() {
           </div>
           
           {/* 3つの統計（横並び） */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-3">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-lg">📋</span>
-                <span className="text-xs font-medium text-gray-600">進行中案件</span>
+                <span className="text-base">📋</span>
+                <span className="text-xs font-medium text-gray-600">進行中</span>
               </div>
-              <div className="text-xl font-bold text-smoky-navy">4</div>
+              <div className="text-lg font-bold text-smoky-navy">4</div>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-lg">✅</span>
-                <span className="text-xs font-medium text-gray-600">完了案件</span>
+                <span className="text-base">✅</span>
+                <span className="text-xs font-medium text-gray-600">完了</span>
               </div>
-              <div className="text-xl font-bold text-smoky-navy">12</div>
+              <div className="text-lg font-bold text-smoky-navy">12</div>
               <div className="text-xs font-medium text-green-600">↗ 8%</div>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-lg">🎯</span>
+                <span className="text-base">🎯</span>
                 <span className="text-xs font-medium text-gray-600">マッチ率</span>
               </div>
-              <div className="text-xl font-bold text-smoky-navy">89%</div>
+              <div className="text-lg font-bold text-smoky-navy">89%</div>
               <div className="text-xs font-medium text-green-600">↗ 3%</div>
             </div>
           </div>
@@ -145,10 +142,10 @@ export default function DashboardPage() {
 
 
         {/* ポートフォリオ分析 */}
-        <div className="grid grid-cols-1 gap-4 mb-4">
+        <div className="grid grid-cols-1 gap-3 mb-3">
 
           {/* 強みとレコメンド */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold text-smoky-navy mb-3">分析とレコメンド</h3>
             
             {/* 強いジャンル */}
@@ -187,9 +184,9 @@ export default function DashboardPage() {
         </div>
 
         {/* 月別収益推移（縦棒グラフ） */}
-        <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-smoky-navy mb-4">月別収益推移</h3>
-          <div className="flex items-end justify-between h-40 px-4 py-2">
+        <div className="bg-white rounded-lg p-3 mb-20 shadow-sm border border-gray-100">
+          <h3 className="text-base font-bold text-smoky-navy mb-3">月別収益推移</h3>
+          <div className="flex items-end justify-between h-32 px-2 py-1">
             {[
               { month: '6月', amount: 45000, projects: 3 },
               { month: '7月', amount: 78000, projects: 5 },
@@ -198,12 +195,12 @@ export default function DashboardPage() {
             ].map((data, index) => (
               <div key={index} className="flex flex-col items-center flex-1">
                 {/* 棒グラフ */}
-                <div className="flex flex-col items-center justify-end h-32 w-full max-w-12">
+                <div className="flex flex-col items-center justify-end h-24 w-full max-w-10">
                   <div
                     className="bg-gradient-to-t from-salmon-coral to-sunset-yellow rounded-t-md w-full flex items-end justify-center pb-1"
                     style={{ 
                       height: `${(data.amount / 128000) * 100}%`,
-                      minHeight: '20px'
+                      minHeight: '16px'
                     }}
                   >
                     <span className="text-white text-xs font-bold">
@@ -212,8 +209,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 {/* 月とプロジェクト数 */}
-                <div className="mt-2 text-center">
-                  <div className="text-sm font-medium text-gray-700">{data.month}</div>
+                <div className="mt-1 text-center">
+                  <div className="text-xs font-medium text-gray-700">{data.month}</div>
                   <div className="text-xs text-gray-500">{data.projects}件</div>
                 </div>
               </div>

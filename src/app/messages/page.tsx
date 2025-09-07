@@ -86,7 +86,7 @@ export default function MessagesPage() {
       </div>
 
       {/* メッセージ一覧 */}
-      <div className="bg-light-greige">
+      <div className="bg-white pb-20">
         {filteredMessages.length > 0 ? (
           filteredMessages.map((message) => (
             <Link key={message.id} href={`/messages/${message.id}`}>

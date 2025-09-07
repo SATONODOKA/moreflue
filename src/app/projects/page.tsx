@@ -316,7 +316,7 @@ function ProjectsContent() {
           </button>
         </div>
         
-        <div className="bg-light-greige">
+        <div className="bg-white">
           {projects.applied.length > 0 ? (
             projects.applied.map((project, index) => (
               <div key={`${project.id}-${index}`} className="bg-white p-4 border-b border-gray-100">
@@ -415,7 +415,7 @@ function ProjectsContent() {
       </div>
       
       {/* コンパクトカード一覧 */}
-      <div className="bg-light-greige">
+      <div className="bg-white pb-20">
         {getCurrentProjects().length > 0 ? (
           getCurrentProjects().map((project, index) => (
             <CompactProjectCard key={`${project.id}-${index}-${activeTab}`} {...project} tab={activeTab} />
