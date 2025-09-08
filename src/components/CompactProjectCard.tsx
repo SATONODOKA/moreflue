@@ -6,9 +6,10 @@ interface CompactProjectCardProps {
   id: string;
   storeName: string;
   reward: {
-    type: 'fixed' | 'performance';
+    type: 'fixed' | 'performance' | 'free_plus_commission';
     amount: number;
     performanceRate?: number;
+    commission?: number;
   };
   matchScore: number;
   category: string;
@@ -63,10 +64,14 @@ const CompactProjectCard = ({
           {/* 報酬表示 */}
           <div className="mb-2">
             <span className="text-salmon-coral font-bold text-lg">
-              {reward.type === 'fixed' ? (
+              {id === 'demo-2' ? (
+                `無償提供 + ¥600/予約`
+              ) : reward.type === 'fixed' ? (
                 `¥${reward.amount.toLocaleString()}`
-              ) : (
+              ) : reward.type === 'performance' ? (
                 `¥${reward.amount.toLocaleString()} + 成果報酬${reward.performanceRate}%`
+              ) : (
+                `¥${reward.amount.toLocaleString()}`
               )}
             </span>
           </div>

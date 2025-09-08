@@ -45,9 +45,10 @@ const sampleProjects = {
     id: string;
     storeName: string;
     reward: {
-      type: 'fixed' | 'performance';
+      type: 'fixed' | 'performance' | 'free_plus_commission';
       amount: number;
       performanceRate?: number;
+      commission?: number;
     };
     matchScore: number;
     category: string;
@@ -59,9 +60,10 @@ const sampleProjects = {
     id: string;
     storeName: string;
     reward: {
-      type: 'fixed' | 'performance';
+      type: 'fixed' | 'performance' | 'free_plus_commission';
       amount: number;
       performanceRate?: number;
+      commission?: number;
     };
     matchScore: number;
     category: string;
@@ -140,7 +142,10 @@ function ProjectsContent() {
     
     // ホームから応募された場合は応募済み欄を表示
     if (showAppliedParam === 'true') {
-      setShowApplied(true);
+      // 少し遅らせて確実に状態更新を反映
+      setTimeout(() => {
+        setShowApplied(true);
+      }, 50);
     }
     
     // 辞退された案件をリストから削除
@@ -193,6 +198,7 @@ function ProjectsContent() {
     if (applied) {
       // 応募済み案件のデータを動的に作成
       const appliedProject = findProjectById(applied);
+      console.log('Applied project found:', appliedProject); // デバッグ用
       if (appliedProject) {
         setProjects(prev => {
           // 既に存在する案件かチェック
@@ -275,6 +281,23 @@ function ProjectsContent() {
         category: 'ラーメン',
         location: '池袋',
       },
+      // デモ用案件も追加
+      {
+        id: 'demo-2',
+        storeName: 'ビストロ・ル・コワン 表参道',
+        reward: { type: 'free_plus_commission' as const, amount: 0, commission: 600 },
+        matchScore: 95,
+        category: 'イタリアン・フレンチ',
+        location: '表参道',
+      },
+      {
+        id: 'demo-1',
+        storeName: 'イタリアン・ベラヴィスタ 青山店',
+        reward: { type: 'free_plus_commission' as const, amount: 0, commission: 800 },
+        matchScore: 98,
+        category: 'イタリアン・フレンチ',
+        location: '青山',
+      },
     ];
     
     // スカウト案件からも検索（ID 7-9）
@@ -324,7 +347,9 @@ function ProjectsContent() {
                   <div className="flex-1">
                     <h3 className="font-bold text-smoky-navy text-base mb-2">{project.storeName}</h3>
                     <div className="text-salmon-coral font-bold text-lg mb-2">
-                      {project.reward.type === 'fixed' ? (
+                      {project.id === 'demo-2' ? (
+                        '無償提供 + ¥600/予約'
+                      ) : project.reward.type === 'fixed' ? (
                         `¥${project.reward.amount.toLocaleString()}`
                       ) : (
                         `¥${project.reward.amount.toLocaleString()} + 成果報酬${project.reward.performanceRate}%`

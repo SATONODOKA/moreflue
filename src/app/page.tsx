@@ -5,6 +5,82 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProjectCard from '@/components/ProjectCard';
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
 
+// デモ用フィルター投稿データ
+const demoFilteredProjects = [
+  {
+    id: 'demo-2',
+    storeName: 'ビストロ・ル・コワン 表参道',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 600 },
+    matchScore: 95,
+    category: 'イタリアン・フレンチ',
+    location: '表参道',
+    condition: 'Instagram投稿1本',
+    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+    recommendationPoint: 'パリの雰囲気漂うビストロで本格フレンチを',
+    platforms: ['instagram'] as ('instagram' | 'tiktok' | 'twitter' | 'youtube')[],
+    isFollowing: false,
+  },
+  {
+    id: 'demo-1',
+    storeName: 'イタリアン・ベラヴィスタ 青山店',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 800 },
+    matchScore: 98,
+    category: 'イタリアン・フレンチ',
+    location: '青山',
+    condition: 'YouTube投稿1本',
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop',
+    ],
+    recommendationPoint: '本格イタリアンと洗練された店内で特別なひとときを',
+    platforms: ['youtube'] as ('instagram' | 'tiktok' | 'twitter' | 'youtube')[],
+    isFollowing: false,
+    transportation: 'covered',
+    distance: '電車25分',
+  },
+  {
+    id: 'demo-3',
+    storeName: 'トラットリア・ナポリ 恵比寿',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 750 },
+    matchScore: 92,
+    category: 'イタリアン・フレンチ',
+    location: '恵比寿',
+    condition: 'TikTok投稿1本',
+    imageUrl: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400&h=300&fit=crop',
+    recommendationPoint: '薪窯で焼く本格ナポリピザが自慢',
+    platforms: ['tiktok'] as ('instagram' | 'tiktok' | 'twitter' | 'youtube')[],
+    isFollowing: false,
+  },
+  {
+    id: 'demo-4',
+    storeName: 'フレンチ・エトワール 銀座',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 900 },
+    matchScore: 90,
+    category: 'イタリアン・フレンチ',
+    location: '銀座',
+    condition: 'YouTube投稿1本',
+    imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
+    recommendationPoint: '銀座の隠れ家的フレンチレストラン',
+    platforms: ['youtube'] as ('instagram' | 'tiktok' | 'twitter' | 'youtube')[],
+    isFollowing: false,
+  },
+  {
+    id: 'demo-5',
+    storeName: 'オステリア・デル・ソーレ 六本木',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 700 },
+    matchScore: 88,
+    category: 'イタリアン・フレンチ',
+    location: '六本木',
+    condition: 'Instagram投稿1本',
+    imageUrl: 'https://images.unsplash.com/photo-1578474846511-04ba529f0b88?w=400&h=300&fit=crop',
+    recommendationPoint: 'イタリア直送食材を使った本格イタリアン',
+    platforms: ['instagram'] as ('instagram' | 'tiktok' | 'twitter' | 'youtube')[],
+    isFollowing: false,
+  },
+];
+
 // サンプルデータ
 const sampleProjects = {
   recommended: [
@@ -248,6 +324,17 @@ function HomeContent() {
   ];
 
   const getCurrentProjects = () => {
+    // デモ用の投稿を表示（フィルター適用時）
+    const hasFiltersApplied = filters.platforms.length > 0 || 
+      filters.locationType !== '' || 
+      filters.categoryType !== '' ||
+      filters.rewardType !== '';
+
+    if (hasFiltersApplied) {
+      const filteredDemoProjects = demoFilteredProjects.filter(project => !appliedProjects.includes(project.id));
+      return filteredDemoProjects;
+    }
+
     const allProjects = projects[activeTab] || [];
     // 応募済み案件をフィードから除外
     let filteredProjects = allProjects.filter(project => !appliedProjects.includes(project.id));
@@ -362,7 +449,9 @@ function HomeContent() {
       {/* ヘッダー */}
       <header className="bg-salmon-coral px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">moreflue</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white">moreflue</h1>
+          </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={(e) => {
@@ -423,6 +512,7 @@ function HomeContent() {
           ))}
         </div>
       </div>
+      
 
       {/* プルトゥリフレッシュインジケーター */}
       {isRefreshing && (
@@ -877,10 +967,7 @@ function HomeContent() {
                   リセット
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Filter apply button clicked'); // デバッグ用
+                  onClick={() => {
                     setShowFilter(false);
                   }}
                   className="flex-1 py-3 bg-salmon-coral text-white rounded-lg font-medium"

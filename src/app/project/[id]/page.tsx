@@ -13,9 +13,10 @@ interface ProjectDetails {
   imageUrl: string;
   story: string;
   reward: {
-    type: 'fixed' | 'performance';
+    type: 'fixed' | 'performance' | 'free_plus_commission';
     amount: number;
     performanceRate?: number;
+    commission?: number;
   };
   matchScore: number;
   platforms: string[];
@@ -195,6 +196,27 @@ const projectDetails: { [key: string]: ProjectDetails } = {
       additionalNotes: '午後の撮影を推奨します'
     }
   },
+  // デモ用詳細データ
+  'demo-2': {
+    id: 'demo-2',
+    storeName: 'ビストロ・ル・コワン 表参道',
+    category: 'イタリアン・フレンチ',
+    location: '表参道',
+    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop',
+    story: 'パリの雰囲気漂うビストロで本格フレンチを。厳選されたフランス産食材と、熟練シェフの技が織りなす極上の料理体験をお楽しみください。表参道の洗練された空間で、特別なひとときをご提供いたします。',
+    reward: { type: 'free_plus_commission' as const, amount: 0, commission: 600 },
+    matchScore: 95,
+    platforms: ['instagram'],
+    isFollowing: false,
+    details: {
+      travelTime: '表参道駅から徒歩3分',
+      postRequirements: 'Instagram投稿1本 + ストーリーズ3投稿',
+      preApproval: true,
+      performanceGoals: '投稿経由での来店1組につき600円の成果報酬',
+      timeline: '撮影から1週間以内に投稿',
+      additionalNotes: 'ランチタイムまたはディナータイムでの撮影を推奨'
+    }
+  },
   '9': {
     id: '9',
     storeName: 'フィットネスジム POWER',
@@ -244,6 +266,7 @@ const getPhoneNumber = (projectId: string): string => {
     '7': '03-7890-1234', // 焼肉 龍神
     '8': '03-8901-2345', // スイーツカフェ Sweet（スカウト版）
     '9': '03-9012-3456', // フィットネスジム POWER（スカウト版）
+    'demo-2': '03-5555-0002', // ビストロ・ル・コワン 表参道
   };
   return phoneNumbers[projectId] || '03-0000-0000';
 };
@@ -304,7 +327,11 @@ function ProjectDetailContent() {
     const newApplied = [...getCachedData<string[]>(CACHE_KEYS.HOME_APPLIED_PROJECTS, []), params.id as string];
     setCachedData(CACHE_KEYS.HOME_APPLIED_PROJECTS, newApplied);
     
-    router.push(`/projects?applied=${params.id}&showApplied=true`);
+    // まずホームに戻って応募済みを反映してから案件管理に移動
+    router.push(`/?applied=${params.id}&source=detail`);
+    setTimeout(() => {
+      router.push(`/projects?applied=${params.id}&source=detail&showApplied=true`);
+    }, 100);
   };
 
   const handleSendMessage = () => {
@@ -365,8 +392,12 @@ function ProjectDetailContent() {
               <div className="text-salmon-coral font-bold text-lg">
                 {project.reward.type === 'fixed' ? (
                   `¥${project.reward.amount.toLocaleString()}`
+                ) : project.reward.type === 'performance' ? (
+                  `¥${project.reward.amount.toLocaleString()} + 成果報酬${project.reward.performanceRate}%`
+                ) : project.reward.type === 'free_plus_commission' ? (
+                  `無償提供 + ¥${project.reward.commission?.toLocaleString()}/予約`
                 ) : (
-                  `¥${project.reward.amount.toLocaleString()} + ${project.reward.performanceRate}%`
+                  `¥${project.reward.amount.toLocaleString()}`
                 )}
               </div>
             </div>
@@ -396,8 +427,12 @@ function ProjectDetailContent() {
             <div className="text-salmon-coral font-bold text-2xl mb-4">
               {project.reward.type === 'fixed' ? (
                 `¥${project.reward.amount.toLocaleString()}`
-              ) : (
+              ) : project.reward.type === 'performance' ? (
                 `¥${project.reward.amount.toLocaleString()} + 成果報酬${project.reward.performanceRate}%`
+              ) : project.reward.type === 'free_plus_commission' ? (
+                `無償提供 + ¥${project.reward.commission?.toLocaleString()}/予約`
+              ) : (
+                `¥${project.reward.amount.toLocaleString()}`
               )}
             </div>
             <div className="bg-gray-100 text-smoky-navy px-3 py-2 rounded-lg text-center text-sm font-bold">
