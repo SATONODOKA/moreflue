@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save, X, ChevronLeft, ChevronRight, Instagram, Music2, Youtube, DollarSign, ImagePlus, Trash2 } from 'lucide-react';
+import { Upload, Target, Calendar, Users, Mic, Play, Pause, TrendingUp, AlertCircle, CheckCircle, Sparkles, Search, Heart, Eye, UserCheck, Send, Save, X, ChevronLeft, ChevronRight, Instagram, Music2, Youtube, DollarSign, ImagePlus, Trash2, Twitter, MessageCircle } from 'lucide-react';
 
 interface ProjectFormData {
   // Step1: 詳細設定
@@ -11,7 +11,7 @@ interface ProjectFormData {
   snsPlatforms: string[];
   hasReward: boolean;
   hasTransportation: boolean;
-  confirmationFlow: 'pre-check' | 'no-check' | 'post-check';
+  confirmationFlow: 'no-check' | 'post-check';
   images: File[];
   
   // Step2: 報酬設定
@@ -129,7 +129,7 @@ export default function CreateProjectContent() {
     snsPlatforms: [],
     hasReward: false,
     hasTransportation: false,
-    confirmationFlow: 'pre-check',
+    confirmationFlow: 'no-check',
     images: [],
     
     // Step2: 報酬設定
@@ -219,7 +219,14 @@ export default function CreateProjectContent() {
       engagement: 0,
       createdAt: new Date().toISOString(),
       applicationsCount: distributionType === 'public' ? 0 : undefined,
-      matchesCount: 0
+      matchesCount: 0,
+      snsPlatforms: formData.snsPlatforms,
+      hasReward: formData.hasReward,
+      hasTransportation: formData.hasTransportation,
+      confirmationFlow: formData.confirmationFlow,
+      unitPrice: formData.unitPrice,
+      costPrice: formData.costPrice,
+      images: formData.images.map(img => URL.createObjectURL(img))
     };
 
     const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
@@ -229,8 +236,10 @@ export default function CreateProjectContent() {
     // 案件管理画面にデータ更新を通知
     window.dispatchEvent(new CustomEvent('projectCreated', { detail: newProject }));
     
-    // 案件管理タブに移動
-    window.dispatchEvent(new CustomEvent('switchToManageTab'));
+    // 対応するタブに移動
+    window.dispatchEvent(new CustomEvent('switchToManageTab', { 
+      detail: { activeTab: distributionType }
+    }));
   };
 
   // フィルタリングされたインフルエンサーリスト
@@ -306,6 +315,17 @@ export default function CreateProjectContent() {
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
+                onClick={() => toggleSNSPlatform('youtube')}
+                className={`p-3 rounded-xl border-2 transition ${
+                  formData.snsPlatforms.includes('youtube')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                <Youtube size={20} className="mx-auto mb-1" />
+                <div className="text-xs">YouTube</div>
+              </button>
+              <button
                 onClick={() => toggleSNSPlatform('instagram')}
                 className={`p-3 rounded-xl border-2 transition ${
                   formData.snsPlatforms.includes('instagram')
@@ -316,6 +336,19 @@ export default function CreateProjectContent() {
                 <Instagram size={20} className="mx-auto mb-1" />
                 <div className="text-xs">Instagram</div>
               </button>
+              <button
+                onClick={() => toggleSNSPlatform('x')}
+                className={`p-3 rounded-xl border-2 transition ${
+                  formData.snsPlatforms.includes('x')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                <Twitter size={20} className="mx-auto mb-1" />
+                <div className="text-xs">X</div>
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
               <button
                 onClick={() => toggleSNSPlatform('tiktok')}
                 className={`p-3 rounded-xl border-2 transition ${
@@ -328,15 +361,15 @@ export default function CreateProjectContent() {
                 <div className="text-xs">TikTok</div>
               </button>
               <button
-                onClick={() => toggleSNSPlatform('youtube')}
+                onClick={() => toggleSNSPlatform('threads')}
                 className={`p-3 rounded-xl border-2 transition ${
-                  formData.snsPlatforms.includes('youtube')
+                  formData.snsPlatforms.includes('threads')
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-gray-300 bg-white'
                 }`}
               >
-                <Youtube size={20} className="mx-auto mb-1" />
-                <div className="text-xs">YouTube</div>
+                <MessageCircle size={20} className="mx-auto mb-1" />
+                <div className="text-xs">Threads</div>
               </button>
             </div>
           </div>
@@ -383,12 +416,11 @@ export default function CreateProjectContent() {
             </label>
             <select
               value={formData.confirmationFlow}
-              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value as 'pre-check' | 'no-check' | 'post-check'})}
+              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value as 'no-check' | 'post-check'})}
               className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              <option value="pre-check">事前確認あり</option>
-              <option value="no-check">確認なし</option>
-              <option value="post-check">納品後確認</option>
+              <option value="no-check">事前確認なし</option>
+              <option value="post-check">納品後に確認</option>
             </select>
           </div>
 
@@ -555,7 +587,7 @@ export default function CreateProjectContent() {
 
             <div>
               <label className="block text-sm font-medium text-tertiary mb-2">
-                インフルエンサーへの支払額（1投稿あたり）
+                無償提供分の原価（1投稿あたり）
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-gray-400 text-sm">¥</span>
@@ -585,7 +617,7 @@ export default function CreateProjectContent() {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">支払額</span>
+              <span className="text-sm text-gray-600">無償提供額</span>
               <span className="text-sm font-medium">
                 ¥{formData.paymentAmount.toLocaleString()}
               </span>
@@ -911,7 +943,7 @@ export default function CreateProjectContent() {
               <h3 className="text-sm font-semibold text-gray-600 mb-2">報酬設定</h3>
               <div className="bg-gray-50 p-3 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">支払額</span>
+                  <span className="text-gray-600">無償提供額</span>
                   <span className="font-medium">¥{formData.paymentAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -950,8 +982,7 @@ export default function CreateProjectContent() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">投稿確認</span>
                   <span className="font-medium">
-                    {formData.confirmationFlow === 'pre-check' ? '事前確認あり' :
-                     formData.confirmationFlow === 'no-check' ? '確認なし' : '納品後確認'}
+                    {formData.confirmationFlow === 'no-check' ? '事前確認なし' : '納品後に確認'}
                   </span>
                 </div>
               </div>
@@ -996,9 +1027,9 @@ export default function CreateProjectContent() {
   return (
     <div>
       {/* ヘッダー */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-primary border-b sticky top-0 z-10">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-tertiary text-center">新規案件作成</h1>
+          <h1 className="text-lg font-bold text-white text-center">新規案件作成</h1>
         </div>
         
         {/* ステップインジケーター */}
@@ -1009,15 +1040,15 @@ export default function CreateProjectContent() {
                 <div className="flex flex-col items-center flex-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                     currentStep === step.id 
-                      ? 'bg-primary text-white' 
+                      ? 'bg-white text-primary' 
                       : currentStep > step.id 
                         ? 'bg-green-500 text-white' 
-                        : 'bg-gray-200 text-gray-400'
+                        : 'bg-white/30 text-white'
                   }`}>
                     {currentStep > step.id ? <CheckCircle size={16} /> : step.id}
                   </div>
                   <span className={`text-[10px] mt-1 whitespace-nowrap ${
-                    currentStep === step.id ? 'text-primary font-semibold' : 'text-gray-400'
+                    currentStep === step.id ? 'text-white font-semibold' : 'text-white/70'
                   }`}>
                     {step.title}
                   </span>

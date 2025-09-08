@@ -56,24 +56,39 @@ export default function ManageProjectContent() {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [showAllApplicants, setShowAllApplicants] = useState(false);
 
+  // タブ切り替えイベントのリスナー
+  useEffect(() => {
+    const handleSwitchToManageTab = (event: CustomEvent) => {
+      if (event.detail?.activeTab) {
+        setActiveTab(event.detail.activeTab);
+      }
+    };
+    
+    window.addEventListener('switchToManageTab', handleSwitchToManageTab as EventListener);
+    
+    return () => {
+      window.removeEventListener('switchToManageTab', handleSwitchToManageTab as EventListener);
+    };
+  }, []);
+
   // localStorageから案件を読み込み
   useEffect(() => {
     const loadProjects = () => {
       try {
         const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]') as Project[];
         
-        // ユーザー作成案件とダミーデータを分離
-        const userProjects = storedProjects.filter((p: Project) => 
-          p.id < 100000 && // ダミーデータのIDは100000以上
-          p.title !== 'あ' // 古いダミーデータを除外
-        );
+        // 全ての案件を取得（ダミーデータとユーザー作成案件の両方）
+        setProjects(storedProjects);
+        return;
         
+        // 以下は初回のダミーデータ生成ロジック（コメントアウト）
+        /*
         const hasDummyData = storedProjects.some((p: Project) => 
           p.title && p.title.includes('パンケーキ')
         );
         
         if (!hasDummyData) {
-          // ダミーデータを追加（ユーザーデータは保持）
+          // ダミーデータを追加
           const mockProjects: Project[] = [
             {
               id: 1,
@@ -155,27 +170,14 @@ export default function ManageProjectContent() {
             }
           ];
           
-          // ユーザー作成案件とダミーデータを統合
-          const combinedProjects = [...userProjects, ...mockProjects];
+          // 既存のプロジェクトと統合
+          const combinedProjects = [...storedProjects, ...mockProjects];
           localStorage.setItem('projects', JSON.stringify(combinedProjects));
           setProjects(combinedProjects);
         } else {
-          // 数値の整合性を確保：実際のデータに基づいて計算
-          const projectsWithMockData = storedProjects.map((project) => {
-            // 公募の場合の応募数（見送りした人を除く）
-            const currentApplicants = applicants.filter(a => a.status !== 'rejected').length;
-            // チャット数はグローバルチャットから取得
-            const currentChats = chatPreviews.length;
-            
-            return {
-              ...project,
-              applicationsCount: project.distributionType === 'public' ? currentApplicants : 0,
-              matchesCount: currentChats
-            };
-          });
-          
-          setProjects(projectsWithMockData);
+          setProjects(storedProjects);
         }
+        */
       } catch (error) {
         console.error('プロジェクトの読み込みに失敗しました:', error);
         setProjects([]);
@@ -350,83 +352,12 @@ export default function ManageProjectContent() {
     localStorage.setItem('globalChats', JSON.stringify(initialChats));
   };
 
-  // 初期データ設定（ユーザー作成案件は保持）
+  // 初期データ設定
   useEffect(() => {
     const stored = localStorage.getItem('projects');
     
-    // データが存在しないか、古いダミーデータ（"あ"など）の場合のみリセット
-    if (!stored || stored.includes('"title":"あ"') || stored === '[]') {
-      forceResetData();
-      return;
-    }
-    
-    // 既存データがある場合は、それが有効かチェック
-    try {
-      const projects = JSON.parse(stored);
-      // 最低限のダミーデータが存在するかチェック
-      const hasValidData = projects.some((p: any) => 
-        p.title && p.title.includes('パンケーキ')
-      );
-      
-      if (!hasValidData) {
-        // 既存のユーザー作成案件を保持しつつダミーデータを追加
-        const userProjects = projects.filter((p: any) => 
-          !p.title.includes('パンケーキ') && 
-          !p.title.includes('スイーツ') && 
-          !p.title.includes('カフェ') &&
-          !p.title.includes('ランチメニュー') &&
-          !p.title.includes('コーヒー豆') &&
-          !p.title.includes('ドリンク')
-        );
-        
-        // ダミーデータを追加
-        const dummyData = [
-          {
-            id: 100001,
-            title: "新商品パンケーキのPRキャンペーン",
-            status: "公募中",
-            budget: "¥15,000",
-            rewardRate: "5%",
-            deadline: "2025-01-30",
-            description: "新メニューのふわふわパンケーキをSNSでPRしてくださるインフルエンサーを募集中です！",
-            distributionType: 'public',
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            applicationsCount: 3,
-            matchesCount: 1
-          },
-          {
-            id: 100002,
-            title: "季節限定スイーツの投稿キャンペーン",
-            status: "公募中",
-            budget: "¥12,000",
-            rewardRate: "3%",
-            deadline: "2025-02-15",
-            description: "春の新作スイーツをInstagramストーリーズでご紹介ください。",
-            distributionType: 'public',
-            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            applicationsCount: 5,
-            matchesCount: 2
-          },
-          {
-            id: 100003,
-            title: "カフェの新店舗オープン告知",
-            status: "進行中",
-            budget: "¥20,000",
-            rewardRate: "7%",
-            deadline: "2025-02-05",
-            description: "渋谷の新店舗オープンを多くの方に知ってもらいたいです。",
-            distributionType: 'scout',
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            selectedInfluencers: [1, 2, 3],
-            matchesCount: 2
-          }
-        ];
-        
-        const combinedData = [...userProjects, ...dummyData];
-        localStorage.setItem('projects', JSON.stringify(combinedData));
-        setProjects(combinedData);
-      }
-    } catch (e) {
+    // データが存在しない場合のみダミーデータを設定
+    if (!stored || stored === '[]') {
       forceResetData();
     }
   }, []);
@@ -569,14 +500,14 @@ export default function ManageProjectContent() {
   return (
     <div>
       {/* ヘッダー */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-primary border-b sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-tertiary">案件管理</h1>
+          <h1 className="text-lg font-bold text-white">案件管理</h1>
           
           {/* 下書きボタン */}
           <button
             onClick={() => setShowDraftModal(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/20 rounded-lg transition"
           >
             <FileText size={16} />
             下書き
@@ -678,8 +609,8 @@ export default function ManageProjectContent() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // 編集機能の実装
-                      alert('編集機能は今後実装予定です');
+                      setSelectedProject(project);
+                      setShowProjectDetail(true);
                     }}
                     className="p-2 hover:bg-gray-100 rounded-full"
                   >

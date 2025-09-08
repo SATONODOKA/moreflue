@@ -147,9 +147,9 @@ export default function HomeContent() {
   return (
     <div className="min-h-screen">
       {/* ヘッダー */}
-      <header className="bg-gradient-to-r from-[#FF8A8A] to-[#FFB5B5] text-white py-5 px-4 rounded-b-xl mb-4">
+      <header className="bg-gradient-to-r from-[#FF8A8A] to-[#FFB5B5] text-white py-5 px-4 rounded-b-2xl mb-4">
         <h1 className="text-2xl font-bold mb-1">moreflue</h1>
-        <p className="text-white/90 text-xs">店舗向けインフルエンサーマーケティング</p>
+        <p className="text-white/90 text-xs">店舗向けインフルエンサーマッチングシステム</p>
       </header>
       
       <div className="px-4 space-y-4">
@@ -160,21 +160,21 @@ export default function HomeContent() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setShowDetailedStats(!showDetailedStats)}
-            className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5"
+            className="bg-white rounded-2xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5"
           >
             <div className="text-[#FF8A8A] text-xl font-bold">{monthlyStats.activeProjects}</div>
             <div className="text-gray-500 text-xs mt-1">進行中の案件</div>
           </button>
           <button
             onClick={() => setShowDetailedStats(!showDetailedStats)}
-            className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5"
+            className="bg-white rounded-2xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5"
           >
             <div className="text-[#FF8A8A] text-xl font-bold">¥{(monthlyStats.totalProfit / 1000).toFixed(0)}K</div>
             <div className="text-gray-500 text-xs mt-1">今月の利益</div>
           </button>
           <button
             onClick={() => setShowDetailedStats(!showDetailedStats)}
-            className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5 relative"
+            className="bg-white rounded-2xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5 relative"
           >
             <div className="text-[#FF8A8A] text-xl font-bold">{(monthlyStats.totalReach / 1000).toFixed(0)}K</div>
             <div className="text-gray-500 text-xs mt-1">総リーチ数</div>
@@ -184,7 +184,7 @@ export default function HomeContent() {
           </button>
           <button
             onClick={() => setShowDetailedStats(!showDetailedStats)}
-            className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5 relative"
+            className="bg-white rounded-2xl shadow-sm p-4 text-center hover:shadow-md transition-all hover:-translate-y-0.5 relative"
           >
             <div className="text-[#FF8A8A] text-xl font-bold">{monthlyStats.avgEngagement}%</div>
             <div className="text-gray-500 text-xs mt-1">平均エンゲージメント</div>
@@ -194,62 +194,6 @@ export default function HomeContent() {
           </button>
         </div>
 
-        {/* 詳細成果モーダル */}
-        {showDetailedStats && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
-              <div className="px-4 py-3 border-b flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-tertiary">詳細成果</h2>
-                <button
-                  onClick={() => setShowDetailedStats(false)}
-                  className="p-2 rounded-full hover:bg-gray-100"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
-                {detailedStats.map((stat) => (
-                  <div key={stat.id} className="border rounded-xl p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium text-sm">{stat.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        stat.status === '完了' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {stat.status}
-                      </span>
-                    </div>
-                    
-                    <div className="text-xs text-gray-600 mb-2">
-                      {stat.influencer} • {stat.platform}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <Eye size={12} />
-                        <span>{stat.reach.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Heart size={12} />
-                        <span>{stat.engagement}%</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign size={12} />
-                        <span>¥{stat.profit.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <TrendingUp size={12} />
-                        <span>ROI {stat.roi}%</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
 
@@ -329,6 +273,63 @@ export default function HomeContent() {
         )}
       </section>
       </div>
+      
+      {/* 詳細成果モーダル */}
+      {showDetailedStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-tertiary">詳細成果</h2>
+              <button
+                onClick={() => setShowDetailedStats(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              {detailedStats.map((stat) => (
+                <div key={stat.id} className="border rounded-xl p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-sm">{stat.title}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      stat.status === '完了' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {stat.status}
+                    </span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 mb-2">
+                    {stat.influencer} • {stat.platform}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Eye size={12} />
+                      <span>{stat.reach.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart size={12} />
+                      <span>{stat.engagement}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DollarSign size={12} />
+                      <span>¥{stat.profit.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <TrendingUp size={12} />
+                      <span>ROI {stat.roi}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

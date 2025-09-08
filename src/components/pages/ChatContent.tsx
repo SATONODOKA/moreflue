@@ -141,9 +141,9 @@ export default function ChatContent() {
   return (
     <div className="pb-20">
       {/* ヘッダー */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-primary border-b sticky top-0 z-10">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-tertiary text-center">チャット</h1>
+          <h1 className="text-lg font-bold text-white text-center">チャット</h1>
         </div>
       </div>
 

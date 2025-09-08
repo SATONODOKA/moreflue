@@ -8,11 +8,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // メインカラー：サーモンコーラル
+        // メインカラー：サーモンピンク
         primary: {
-          DEFAULT: '#FF6F61',
-          light: '#FF8A7A',
-          dark: '#E55A4E',
+          DEFAULT: '#FF9B9B',
+          light: '#FFB4B4',
+          dark: '#FF8080',
         },
         // サブカラー1：ライトグレージュ
         secondary: {
