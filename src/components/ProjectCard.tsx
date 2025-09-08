@@ -206,8 +206,45 @@ const ProjectCard = ({
           </div>
         )}
         
+        {/* 画像ナビゲーションボタン */}
+        {hasMultipleImages && (
+          <>
+            {/* 前の画像ボタン（左側） */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (currentImageIndex > 0) {
+                  setCurrentImageIndex(prev => prev - 1);
+                }
+              }}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors"
+              style={{ display: currentImageIndex > 0 ? 'block' : 'none' }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+            </button>
+            
+            {/* 次の画像ボタン（右側） */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (currentImageIndex < displayImages.length - 1) {
+                  setCurrentImageIndex(prev => prev + 1);
+                }
+              }}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors"
+              style={{ display: currentImageIndex < displayImages.length - 1 ? 'block' : 'none' }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </button>
+          </>
+        )}
+
         {/* オーバーレイ - 投稿媒体アイコンと保存ボタン */}
-        <div className="absolute inset-0 flex justify-between items-start p-3">
+        <div className="absolute inset-0 flex justify-between items-start p-3 pointer-events-none">
           {/* 投稿媒体アイコン */}
           <div className="flex gap-2">
             {platforms.map((platform, index) => (
@@ -223,7 +260,7 @@ const ProjectCard = ({
               e.stopPropagation();
               // 保存処理
             }}
-            className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors"
+            className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors pointer-events-auto"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
