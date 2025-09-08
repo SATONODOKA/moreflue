@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  // Netlify最適化
+  experimental: {
+    esmExternals: true,
+  },
 };
 
 export default nextConfig;
