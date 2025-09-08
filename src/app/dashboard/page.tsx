@@ -95,7 +95,6 @@ export default function DashboardPage() {
           {/* 今月の報酬（一行目） */}
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">💰</span>
               <span className="text-sm font-medium text-gray-600">今月の報酬</span>
             </div>
             <div className="text-2xl font-bold text-smoky-navy mb-1">¥128,000</div>
@@ -109,7 +108,6 @@ export default function DashboardPage() {
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-base">📋</span>
                 <span className="text-xs font-medium text-gray-600">進行中</span>
               </div>
               <div className="text-lg font-bold text-smoky-navy">4</div>
@@ -117,7 +115,6 @@ export default function DashboardPage() {
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-base">✅</span>
                 <span className="text-xs font-medium text-gray-600">完了</span>
               </div>
               <div className="text-lg font-bold text-smoky-navy">12</div>
@@ -126,7 +123,6 @@ export default function DashboardPage() {
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="text-base">🎯</span>
                 <span className="text-xs font-medium text-gray-600">マッチ率</span>
               </div>
               <div className="text-lg font-bold text-smoky-navy">89%</div>
@@ -150,7 +146,7 @@ export default function DashboardPage() {
             
             {/* 強いジャンル */}
             <div className="mb-4">
-              <h4 className="font-semibold text-smoky-navy text-sm mb-2">💪 あなたの強いジャンル</h4>
+              <h4 className="font-semibold text-smoky-navy text-sm mb-2">あなたの強いジャンル</h4>
               <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-purple-800">ビューティー</span>
@@ -162,7 +158,7 @@ export default function DashboardPage() {
 
             {/* レコメンド */}
             <div>
-              <h4 className="font-semibold text-smoky-navy text-sm mb-2">🎯 チャレンジ推奨ジャンル</h4>
+              <h4 className="font-semibold text-smoky-navy text-sm mb-2">チャレンジ推奨ジャンル</h4>
               <div className="space-y-2">
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
@@ -174,7 +170,7 @@ export default function DashboardPage() {
                 <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-green-800">レストラン</span>
-                    <span className="text-xs text-green-600">需要増加中 📈</span>
+                    <span className="text-xs text-green-600">需要増加中</span>
                   </div>
                   <p className="text-green-700 text-xs">成長ジャンルで先行者優位を獲得</p>
                 </div>

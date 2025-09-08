@@ -128,7 +128,38 @@ function HomeContent() {
   const [appliedProjects, setAppliedProjects] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [homeAddress, setHomeAddress] = useState({
+    prefecture: '',
+    city: '',
+    town: '',
+    address: '',
+  });
   const [filters, setFilters] = useState({
+    // SNS媒体
+    platforms: [] as string[],
+    
+    // 場所
+    locationType: '' as 'nearby' | 'area' | '',
+    nearbyTransport: '' as 'walk' | 'train' | 'car' | '',
+    nearbyMinutes: '',
+    prefectures: [] as string[],
+    cities: [] as string[],
+    
+    // カテゴリー
+    categoryType: '' as 'food' | 'beauty' | 'travel' | '',
+    foodCategories: [] as string[],
+    beautyCategories: [] as string[],
+    travelCategories: [] as string[],
+    
+    // 報酬形態
+    rewardType: '' as 'free_only' | 'free_plus_commission' | '',
+    commissionPerBooking: '',
+    
+    // 交通費支給
+    transportationCovered: '' as 'yes' | 'no' | '',
+    
+    // 従来のフィルター（互換性のため残す）
     areas: [] as string[],
     categories: [] as string[],
     rewardTypes: [] as string[],
@@ -194,6 +225,22 @@ function HomeContent() {
       });
     }
   }, [searchParams]);
+
+  // ページ読み込み時に最上部にスクロール
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+    // ブラウザのスクロール位置もリセット
+    window.scrollTo(0, 0);
+  }, []);
+
+  // フィルター変更時に最上部にスクロール
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [filters]);
 
   const tabs = [
     { key: 'recommended', label: 'おすすめ', icon: '✨' },
@@ -342,7 +389,10 @@ function HomeContent() {
                 className="p-2 text-white hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                 title="通知"
               >
-                <span className="text-xl">🔔</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
               </button>
               {getUnreadCount() > 0 && (
                 <div className="absolute -top-1 -right-1 bg-white text-salmon-coral text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -355,7 +405,7 @@ function HomeContent() {
       </header>
 
       {/* タブ */}
-      <div className="bg-white sticky top-[73px] z-30">
+      <div className="bg-white sticky top-[61px] z-30">
         <div className="flex">
           {tabs.map((tab) => (
             <button
@@ -434,7 +484,7 @@ function HomeContent() {
       {showFilter && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center sm:justify-center">
           <div className="w-full max-w-md mx-auto bg-white rounded-t-3xl sm:rounded-2xl max-h-[80vh] sm:max-h-[90vh] overflow-y-auto">
-            <div className="p-4">
+            <div className="p-4 pb-6">
               {/* ヘッダー */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-smoky-navy">フィルター設定</h2>
@@ -454,136 +504,366 @@ function HomeContent() {
                 </button>
               </div>
 
-              {/* エリア選択 */}
+              {/* SNS媒体 */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-smoky-navy mb-3">エリア</h3>
+                <h3 className="text-sm font-medium text-smoky-navy mb-3">SNS媒体</h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {['渋谷', '新宿', '表参道', '恵比寿', '原宿', '池袋', '銀座', '青山'].map(area => (
+                  {[
+                    { key: 'youtube', label: 'YouTube' },
+                    { key: 'instagram', label: 'Instagram' },
+                    { key: 'x', label: 'X' },
+                    { key: 'tiktok', label: 'TikTok' },
+                    { key: 'threads', label: 'Threads' }
+                  ].map(platform => (
                     <button
-                      key={area}
+                      key={platform.key}
                       onClick={() => {
                         setFilters(prev => ({
                           ...prev,
-                          areas: prev.areas.includes(area)
-                            ? prev.areas.filter(a => a !== area)
-                            : [...prev.areas, area]
+                          platforms: prev.platforms.includes(platform.key)
+                            ? prev.platforms.filter(p => p !== platform.key)
+                            : [...prev.platforms, platform.key]
                         }));
                       }}
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                        filters.areas.includes(area)
+                        filters.platforms.includes(platform.key)
                           ? 'bg-salmon-coral text-white'
                           : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
                       }`}
                     >
-                      {area}
+                      {platform.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* カテゴリ選択 */}
+              {/* 場所 */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-smoky-navy mb-3">カテゴリ</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {['カフェ', 'イタリアン', 'ビューティー', 'フィットネス', 'スイーツ', 'ラーメン', '居酒屋', 'ファッション'].map(category => (
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-smoky-navy">場所</h3>
+                  <button
+                    onClick={() => setShowAddressModal(true)}
+                    className="text-xs text-salmon-coral hover:text-smoky-navy transition-colors"
+                  >
+                    自宅の位置を設定（非公開）
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
                     <button
-                      key={category}
-                      onClick={() => {
-                        setFilters(prev => ({
-                          ...prev,
-                          categories: prev.categories.includes(category)
-                            ? prev.categories.filter(c => c !== category)
-                            : [...prev.categories, category]
-                        }));
-                      }}
-                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                        filters.categories.includes(category)
+                      onClick={() => setFilters(prev => ({ ...prev, locationType: 'nearby', prefectures: [], cities: [] }))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        filters.locationType === 'nearby'
                           ? 'bg-salmon-coral text-white'
                           : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
                       }`}
                     >
-                      {category}
+                      自宅からの距離で選ぶ
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, locationType: 'area', nearbyTransport: '', nearbyMinutes: '' }))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        filters.locationType === 'area'
+                          ? 'bg-salmon-coral text-white'
+                          : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                      }`}
+                    >
+                      エリア指定
+                    </button>
+                  </div>
+
+                  {filters.locationType === 'nearby' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-gray-600 mb-2 block">交通手段</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { key: 'walk', label: '徒歩' },
+                            { key: 'train', label: '電車' },
+                            { key: 'car', label: '車' }
+                          ].map(transport => (
+                            <button
+                              key={transport.key}
+                              onClick={() => setFilters(prev => ({ ...prev, nearbyTransport: transport.key }))}
+                              className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                                filters.nearbyTransport === transport.key
+                                  ? 'bg-salmon-coral text-white'
+                                  : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                              }`}
+                            >
+                              {transport.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {filters.nearbyTransport && (
+                        <div>
+                          <label className="text-xs text-gray-600 mb-1 block">時間（分）</label>
+                          <input
+                            type="number"
+                            value={filters.nearbyMinutes}
+                            onChange={(e) => setFilters(prev => ({ ...prev, nearbyMinutes: e.target.value }))}
+                            placeholder="30"
+                            className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {filters.locationType === 'area' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-gray-600 mb-2 block">都道府県</label>
+                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                          {['東京都', '神奈川県', '千葉県', '埼玉県', '大阪府', '京都府', '兵庫県', '愛知県'].map(prefecture => (
+                            <button
+                              key={prefecture}
+                              onClick={() => {
+                                setFilters(prev => ({
+                                  ...prev,
+                                  prefectures: prev.prefectures.includes(prefecture)
+                                    ? prev.prefectures.filter(p => p !== prefecture)
+                                    : [...prev.prefectures, prefecture]
+                                }));
+                              }}
+                              className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                                filters.prefectures.includes(prefecture)
+                                  ? 'bg-salmon-coral text-white'
+                                  : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                              }`}
+                            >
+                              {prefecture}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {filters.prefectures.includes('東京都') && (
+                        <div>
+                          <label className="text-xs text-gray-600 mb-2 block">東京都内市区町村</label>
+                          <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                            {['渋谷区', '新宿区', '港区', '千代田区', '中央区', '品川区', '目黒区', '世田谷区', '杉並区', '中野区', '練馬区', '板橋区'].map(city => (
+                              <button
+                                key={city}
+                                onClick={() => {
+                                  setFilters(prev => ({
+                                    ...prev,
+                                    cities: prev.cities.includes(city)
+                                      ? prev.cities.filter(c => c !== city)
+                                      : [...prev.cities, city]
+                                  }));
+                                }}
+                                className={`py-1 px-2 rounded-lg text-xs font-medium transition-colors ${
+                                  filters.cities.includes(city)
+                                    ? 'bg-salmon-coral text-white'
+                                    : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                                }`}
+                              >
+                                {city}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* カテゴリー */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-smoky-navy mb-3">カテゴリー</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'food', label: '食事' },
+                      { key: 'beauty', label: '美容' },
+                      { key: 'travel', label: '旅行' }
+                    ].map(category => (
+                      <button
+                        key={category.key}
+                        onClick={() => setFilters(prev => ({ ...prev, categoryType: category.key }))}
+                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          filters.categoryType === category.key
+                            ? 'bg-salmon-coral text-white'
+                            : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                        }`}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {filters.categoryType === 'food' && (
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      {['居酒屋', 'ダイニングバー・バル', '創作料理', '和食', '洋食', 'イタリアン・フレンチ', '中華', '焼肉・ホルモン', 
+                        '韓国料理', 'アジア・エスニック料理', '各国料理', 'カラオケ・パーティ', 'バー・カクテル', 'ラーメン', 
+                        'お好み焼き・もんじゃ', 'カフェ・スイーツ', 'その他グルメ'].map(food => (
+                        <button
+                          key={food}
+                          onClick={() => {
+                            setFilters(prev => ({
+                              ...prev,
+                              foodCategories: prev.foodCategories.includes(food)
+                                ? prev.foodCategories.filter(f => f !== food)
+                                : [...prev.foodCategories, food]
+                            }));
+                          }}
+                          className={`py-1 px-2 rounded-lg text-xs font-medium transition-colors ${
+                            filters.foodCategories.includes(food)
+                              ? 'bg-salmon-coral text-white'
+                              : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                          }`}
+                        >
+                          {food}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {filters.categoryType === 'beauty' && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {['ヘア', 'アイ', 'ネイル', 'リラク', '美容医療'].map(beauty => (
+                        <button
+                          key={beauty}
+                          onClick={() => {
+                            setFilters(prev => ({
+                              ...prev,
+                              beautyCategories: prev.beautyCategories.includes(beauty)
+                                ? prev.beautyCategories.filter(b => b !== beauty)
+                                : [...prev.beautyCategories, beauty]
+                            }));
+                          }}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            filters.beautyCategories.includes(beauty)
+                              ? 'bg-salmon-coral text-white'
+                              : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                          }`}
+                        >
+                          {beauty}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {filters.categoryType === 'travel' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {['ホテル', '旅館'].map(travel => (
+                        <button
+                          key={travel}
+                          onClick={() => {
+                            setFilters(prev => ({
+                              ...prev,
+                              travelCategories: prev.travelCategories.includes(travel)
+                                ? prev.travelCategories.filter(t => t !== travel)
+                                : [...prev.travelCategories, travel]
+                            }));
+                          }}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            filters.travelCategories.includes(travel)
+                              ? 'bg-salmon-coral text-white'
+                              : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                          }`}
+                        >
+                          {travel}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* 報酬形態 */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-smoky-navy mb-3">報酬形態</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setFilters(prev => ({
-                        ...prev,
-                        rewardTypes: prev.rewardTypes.includes('fixed')
-                          ? prev.rewardTypes.filter(t => t !== 'fixed')
-                          : [...prev.rewardTypes, 'fixed']
-                      }));
-                    }}
-                    className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                      filters.rewardTypes.includes('fixed')
-                        ? 'bg-salmon-coral text-white'
-                        : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
-                    }`}
-                  >
-                    固定報酬
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilters(prev => ({
-                        ...prev,
-                        rewardTypes: prev.rewardTypes.includes('performance')
-                          ? prev.rewardTypes.filter(t => t !== 'performance')
-                          : [...prev.rewardTypes, 'performance']
-                      }));
-                    }}
-                    className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                      filters.rewardTypes.includes('performance')
-                        ? 'bg-salmon-coral text-white'
-                        : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
-                    }`}
-                  >
-                    成果報酬
-                  </button>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, rewardType: 'free_only', commissionPerBooking: '' }))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        filters.rewardType === 'free_only'
+                          ? 'bg-salmon-coral text-white'
+                          : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                      }`}
+                    >
+                      無償提供のみ
+                    </button>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, rewardType: 'free_plus_commission' }))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        filters.rewardType === 'free_plus_commission'
+                          ? 'bg-salmon-coral text-white'
+                          : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                      }`}
+                    >
+                      無償提供＋成果報酬
+                    </button>
+                  </div>
+
+                  {filters.rewardType === 'free_plus_commission' && (
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">1予約あたりの報酬額（円）</label>
+                      <input
+                        type="number"
+                        value={filters.commissionPerBooking}
+                        onChange={(e) => setFilters(prev => ({ ...prev, commissionPerBooking: e.target.value }))}
+                        placeholder="1000"
+                        className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* 報酬金額 */}
+              {/* 交通費支給 */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-smoky-navy mb-3">報酬金額</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-gray-600 mb-1 block">最小金額</label>
-                    <input
-                      type="number"
-                      value={filters.minAmount}
-                      onChange={(e) => setFilters(prev => ({ ...prev, minAmount: e.target.value }))}
-                      placeholder="0"
-                      className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600 mb-1 block">最大金額</label>
-                    <input
-                      type="number"
-                      value={filters.maxAmount}
-                      onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
-                      placeholder="100000"
-                      className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm"
-                    />
-                  </div>
+                <h3 className="text-sm font-medium text-smoky-navy mb-3">交通費支給</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, transportationCovered: 'yes' }))}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      filters.transportationCovered === 'yes'
+                        ? 'bg-salmon-coral text-white'
+                        : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                    }`}
+                  >
+                    あり
+                  </button>
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, transportationCovered: 'no' }))}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      filters.transportationCovered === 'no'
+                        ? 'bg-salmon-coral text-white'
+                        : 'bg-light-greige text-smoky-navy hover:bg-salmon-coral hover:text-white'
+                    }`}
+                  >
+                    なし
+                  </button>
                 </div>
               </div>
 
               {/* アクションボタン */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 mt-8 mb-4">
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Filter reset button clicked'); // デバッグ用
                     setFilters({
+                      platforms: [],
+                      locationType: '',
+                      nearbyTransport: '',
+                      nearbyMinutes: '',
+                      prefectures: [],
+                      cities: [],
+                      categoryType: '',
+                      foodCategories: [],
+                      beautyCategories: [],
+                      travelCategories: [],
+                      rewardType: '',
+                      commissionPerBooking: '',
+                      transportationCovered: '',
                       areas: [],
                       categories: [],
                       rewardTypes: [],
@@ -607,6 +887,112 @@ function HomeContent() {
                   type="button"
                 >
                   適用
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 自宅住所設定モーダル */}
+      {showAddressModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center sm:justify-center">
+          <div className="w-full max-w-md mx-auto bg-white rounded-t-3xl sm:rounded-2xl max-h-[80vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="p-4 pb-6">
+              {/* ヘッダー */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-smoky-navy">自宅住所設定</h2>
+                <button 
+                  onClick={() => setShowAddressModal(false)}
+                  className="p-2 text-smoky-navy hover:text-salmon-coral"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4 p-3 bg-light-greige rounded-lg">
+                <p className="text-xs text-gray-600">
+                  この情報は非公開で、距離計算のためにのみ使用されます。他のユーザーには表示されません。
+                </p>
+              </div>
+
+              {/* 都道府県 */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-smoky-navy mb-2 block">都道府県</label>
+                <select
+                  value={homeAddress.prefecture}
+                  onChange={(e) => setHomeAddress(prev => ({ ...prev, prefecture: e.target.value }))}
+                  className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                >
+                  <option value="">選択してください</option>
+                  <option value="東京都">東京都</option>
+                  <option value="神奈川県">神奈川県</option>
+                  <option value="千葉県">千葉県</option>
+                  <option value="埼玉県">埼玉県</option>
+                  <option value="大阪府">大阪府</option>
+                  <option value="京都府">京都府</option>
+                  <option value="兵庫県">兵庫県</option>
+                  <option value="愛知県">愛知県</option>
+                </select>
+              </div>
+
+              {/* 市区町村 */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-smoky-navy mb-2 block">市区町村</label>
+                <input
+                  type="text"
+                  value={homeAddress.city}
+                  onChange={(e) => setHomeAddress(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="渋谷区"
+                  className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                />
+              </div>
+
+              {/* 町名 */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-smoky-navy mb-2 block">町名</label>
+                <input
+                  type="text"
+                  value={homeAddress.town}
+                  onChange={(e) => setHomeAddress(prev => ({ ...prev, town: e.target.value }))}
+                  placeholder="神南"
+                  className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                />
+              </div>
+
+              {/* 番地 */}
+              <div className="mb-6">
+                <label className="text-sm font-medium text-smoky-navy mb-2 block">番地</label>
+                <input
+                  type="text"
+                  value={homeAddress.address}
+                  onChange={(e) => setHomeAddress(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="1-2-3"
+                  className="w-full px-3 py-2 border border-light-greige rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
+                />
+              </div>
+
+              {/* アクションボタン */}
+              <div className="flex gap-3 mt-8 mb-4">
+                <button
+                  onClick={() => setShowAddressModal(false)}
+                  className="flex-1 py-3 border border-light-greige text-smoky-navy rounded-lg font-medium"
+                  type="button"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={() => {
+                    // 住所を保存（実際のアプリではローカルストレージやAPIに保存）
+                    console.log('Saving address:', homeAddress);
+                    setShowAddressModal(false);
+                  }}
+                  className="flex-1 py-3 bg-salmon-coral text-white rounded-lg font-medium"
+                  type="button"
+                >
+                  保存
                 </button>
               </div>
             </div>

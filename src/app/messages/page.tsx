@@ -66,7 +66,10 @@ export default function MessagesPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-smoky-navy">チャット</h1>
           <button className="p-2 text-smoky-navy hover:text-salmon-coral transition-colors">
-            <span className="text-xl">✏️</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
           </button>
         </div>
       </header>
@@ -81,7 +84,10 @@ export default function MessagesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-gray-100 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-salmon-coral"
           />
-          <span className="absolute left-3 top-2.5 text-gray-400 text-sm">🔍</span>
+          <svg className="absolute left-3 top-2.5 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
         </div>
       </div>
 
@@ -129,7 +135,9 @@ export default function MessagesPage() {
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <span className="text-6xl mb-4">💬</span>
+            <svg className="mb-4" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
             <h3 className="text-lg font-medium text-smoky-navy mb-2">メッセージがありません</h3>
             <p className="text-gray-600 text-sm">新しいメッセージが届くとここに表示されます</p>
           </div>
