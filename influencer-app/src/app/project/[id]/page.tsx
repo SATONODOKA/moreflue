@@ -5,21 +5,6 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/utils/cache';
 
-// 静的生成用のパラメータを提供
-export async function generateStaticParams() {
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    { id: '4' },
-    { id: '5' },
-    { id: '6' },
-    { id: '7' },
-    { id: '8' },
-    { id: '9' },
-    { id: 'demo-2' },
-  ];
-}
 
 interface ProjectDetails {
   id: string;
