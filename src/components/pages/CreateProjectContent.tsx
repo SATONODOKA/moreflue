@@ -11,7 +11,7 @@ interface ProjectFormData {
   snsPlatforms: string[];
   hasReward: boolean;
   hasTransportation: boolean;
-  confirmationFlow: 'no-check' | 'post-check';
+  confirmationFlow: 'no-check' | 'pre-check';
   images: File[];
   
   // Step2: 報酬設定
@@ -416,11 +416,11 @@ export default function CreateProjectContent() {
             </label>
             <select
               value={formData.confirmationFlow}
-              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value as 'no-check' | 'post-check'})}
+              onChange={(e) => setFormData({...formData, confirmationFlow: e.target.value as 'no-check' | 'pre-check'})}
               className="w-full p-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="no-check">事前確認なし</option>
-              <option value="post-check">納品後に確認</option>
+              <option value="pre-check">事前確認あり</option>
             </select>
           </div>
 
@@ -982,7 +982,7 @@ export default function CreateProjectContent() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">投稿確認</span>
                   <span className="font-medium">
-                    {formData.confirmationFlow === 'no-check' ? '事前確認なし' : '納品後に確認'}
+                    {formData.confirmationFlow === 'no-check' ? '事前確認なし' : '事前確認あり'}
                   </span>
                 </div>
               </div>
